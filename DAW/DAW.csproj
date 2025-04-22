@@ -52,6 +52,9 @@
     <Folder Include="ViewModels\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DAW.Wave\DAW.Wave.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <Page Update="Views\WavePage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

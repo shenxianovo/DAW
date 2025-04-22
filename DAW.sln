@@ -5,6 +5,8 @@ VisualStudioVersion = 17.13.35931.197 d17.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DAW", "DAW\DAW.csproj", "{C66F1C5F-F26A-479F-BC84-2AD587819251}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DAW.Wave", "DAW.Wave\DAW.Wave.csproj", "{4817F8C6-22A4-49C4-9B98-A2751C65ACE5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM64 = Debug|ARM64
@@ -33,6 +35,18 @@ Global
 		{C66F1C5F-F26A-479F-BC84-2AD587819251}.Release|x86.ActiveCfg = Release|x86
 		{C66F1C5F-F26A-479F-BC84-2AD587819251}.Release|x86.Build.0 = Release|x86
 		{C66F1C5F-F26A-479F-BC84-2AD587819251}.Release|x86.Deploy.0 = Release|x86
+		{4817F8C6-22A4-49C4-9B98-A2751C65ACE5}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{4817F8C6-22A4-49C4-9B98-A2751C65ACE5}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{4817F8C6-22A4-49C4-9B98-A2751C65ACE5}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4817F8C6-22A4-49C4-9B98-A2751C65ACE5}.Debug|x64.Build.0 = Debug|Any CPU
+		{4817F8C6-22A4-49C4-9B98-A2751C65ACE5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4817F8C6-22A4-49C4-9B98-A2751C65ACE5}.Debug|x86.Build.0 = Debug|Any CPU
+		{4817F8C6-22A4-49C4-9B98-A2751C65ACE5}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{4817F8C6-22A4-49C4-9B98-A2751C65ACE5}.Release|ARM64.Build.0 = Release|Any CPU
+		{4817F8C6-22A4-49C4-9B98-A2751C65ACE5}.Release|x64.ActiveCfg = Release|Any CPU
+		{4817F8C6-22A4-49C4-9B98-A2751C65ACE5}.Release|x64.Build.0 = Release|Any CPU
+		{4817F8C6-22A4-49C4-9B98-A2751C65ACE5}.Release|x86.ActiveCfg = Release|Any CPU
+		{4817F8C6-22A4-49C4-9B98-A2751C65ACE5}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
