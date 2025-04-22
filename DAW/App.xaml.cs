@@ -15,36 +15,45 @@ using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
 namespace DAW
 {
-    /// <summary>
-    /// Provides application-specific behavior to supplement the default Application class.
-    /// </summary>
     public partial class App : Application
     {
-        /// <summary>
-        /// Initializes the singleton application object.  This is the first line of authored code
-        /// executed, and as such is the logical equivalent of main() or WinMain().
-        /// </summary>
+        public IHost Host { get; }
+        public static Window MainWindow { get; } = new MainWindow();
+
+        public static T GetService<T>() where T : class
+        {
+            if ((App.Current as App)!.Host.Services.GetService(typeof(T)) is not T service)
+            {
+                throw new ArgumentException($"{typeof(T)} needs to be registered in ConfigureServices within App.xaml.cs.");
+            }
+
+            return service;
+        }
         public App()
         {
             this.InitializeComponent();
+
+            Host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder().
+                ConfigureServices((content, services) =>
+                {
+                    // Services
+
+                    // ViewModels and Views
+                }).
+                Build();
         }
 
-        /// <summary>
-        /// Invoked when the application is launched.
-        /// </summary>
-        /// <param name="args">Details about the launch request and process.</param>
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
-            m_window = new MainWindow();
-            m_window.Activate();
+            MainWindow.Activate();
         }
-
-        private Window? m_window;
     }
 }
