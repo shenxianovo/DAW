@@ -15,6 +15,7 @@ using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using DAW.ViewModels;
 using DAW.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -50,6 +51,7 @@ namespace DAW
                     // ViewModels and Views
                     services.AddTransient<ShellPage>();
                     services.AddTransient<SettingsPage>();
+                    services.AddSingleton<WaveViewModel>();
                     services.AddTransient<WavePage>();
                 }).
                 Build();

@@ -10,6 +10,6 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid>
-        <TextBlock Text="Wave"/>
+        <TextBlock Text="{x:Bind ViewModel.Name}"/>
     </Grid>
 </Page>

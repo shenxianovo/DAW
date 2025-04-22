@@ -49,9 +49,6 @@
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250401001" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="ViewModels\" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\DAW.Wave\DAW.Wave.csproj" />
   </ItemGroup>
   <ItemGroup>
