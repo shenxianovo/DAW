@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="DAW.Views.SettingsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -6,10 +6,44 @@
     xmlns:local="using:DAW.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
+    xmlns:winUi="using:CommunityToolkit.WinUI"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid>
-        <TextBlock Text="Settings"/>
-    </Grid>
+    <StackPanel>
+        <TextBlock Text="Settings" FontSize="30"/>
+        <TextBlock Text="输入"/>
+        <controls:SettingsCard Header="音频输入设备"
+                               Description="This is description"
+                               HeaderIcon="{winUi:FontIcon Glyph=&#xE720;}">
+            <ComboBox x:Name="InputDeviceComboBox" MinWidth="300"
+                      ItemsSource="{x:Bind ViewModel.InputDevices}"
+                      SelectedItem="{x:Bind ViewModel.SelectedInputDevice, Mode=TwoWay}">
+                <interactivity:Interaction.Behaviors>
+                    <interactivity:EventTriggerBehavior EventName="SelectionChanged">
+                        <interactivity:InvokeCommandAction Command="{x:Bind ViewModel.SetInputDeviceCommand}"
+                                                           CommandParameter="{x:Bind InputDeviceComboBox.SelectedItem, Mode=OneWay}" />
+                    </interactivity:EventTriggerBehavior>
+                </interactivity:Interaction.Behaviors>
+            </ComboBox>
+        </controls:SettingsCard>
+
+        <TextBlock Text="输出"/>
+        <controls:SettingsCard Header="音频输出设备"
+                               HeaderIcon="{winUi:FontIcon Glyph=&#xE7F6;}">
+            <ComboBox x:Name="OutputDeviceComboBox" MinWidth="300"
+                      ItemsSource="{x:Bind ViewModel.OutputDevices}"
+                      SelectedItem="{x:Bind ViewModel.SelectedOutputDevice, Mode=TwoWay}">
+                <interactivity:Interaction.Behaviors>
+                    <interactivity:EventTriggerBehavior EventName="SelectionChanged">
+                        <interactivity:InvokeCommandAction Command="{x:Bind ViewModel.SetOutputDeviceCommand}"
+                                                           CommandParameter="{x:Bind OutputDeviceComboBox.SelectedItem, Mode=OneWay}" />
+                    </interactivity:EventTriggerBehavior>
+                </interactivity:Interaction.Behaviors>
+            </ComboBox>
+        </controls:SettingsCard>
+    </StackPanel>
+
 </Page>

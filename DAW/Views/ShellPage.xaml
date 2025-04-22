@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="DAW.Views.ShellPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -6,6 +6,7 @@
     xmlns:local="using:DAW.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:winUi="using:CommunityToolkit.WinUI"
     mc:Ignorable="d"
     Background="{ThemeResource LayerOnMicaBaseAltFillColorDefault}">
 
@@ -19,10 +20,7 @@
         <NavigationView Grid.Row="1" x:Name="NavView"
                         ItemInvoked="NavView_ItemInvoked">
             <NavigationView.MenuItems>
-                <NavigationViewItem Content="Wave" Tag="WavePage">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE9D9;"/>
-                    </NavigationViewItem.Icon>
+                <NavigationViewItem Icon="{winUi:FontIcon Glyph=&#xE9D9;}" Content="Wave" Tag="WavePage">
                 </NavigationViewItem>
             </NavigationView.MenuItems>
 
