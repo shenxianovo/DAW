@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "DAW (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "DAW (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
