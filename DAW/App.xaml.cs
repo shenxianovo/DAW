@@ -15,6 +15,7 @@ using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using DAW.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -47,6 +48,9 @@ namespace DAW
                     // Services
 
                     // ViewModels and Views
+                    services.AddTransient<ShellPage>();
+                    services.AddTransient<SettingsPage>();
+                    services.AddTransient<WavePage>();
                 }).
                 Build();
         }
@@ -54,6 +58,8 @@ namespace DAW
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             MainWindow.Activate();
+            MainWindow.ExtendsContentIntoTitleBar = true;
+            MainWindow.Content = App.GetService<ShellPage>();
         }
     }
 }
