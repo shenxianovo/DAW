@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DAW.Utils;
+using DAW.Wave.Models;
 using DAW.Wave.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.VisualBasic.Devices;
@@ -18,10 +19,25 @@ public partial class WaveViewModel : ObservableRecipient
     private readonly IWaveService _waveService;
     private readonly IAudioDevice _audioDevice;
 
-    public ObservableCollection<string> AudioList { get; } = [];
+    private bool _isPlaying = false;
+
+    public ObservableCollection<AudioFile> AudioList { get; } = [];
+
+    public AudioFile CurrentAudioFile
+    {
+        get
+        {
+            if (SelectedAudioIndex >= 0 && SelectedAudioIndex < AudioList.Count)
+            {
+                return AudioList[SelectedAudioIndex];
+            }
+            return new AudioFile();
+        }
+    }
 
     [ObservableProperty]
-    public partial int SelectedAudioIndex { get; set; } = 0;
+    [NotifyPropertyChangedFor(nameof(CurrentAudioFile))]
+    public partial int SelectedAudioIndex { get; set; } = -1;
 
     public WaveViewModel(IWaveService waveService, IAudioDevice audioDevice)
     {
@@ -29,7 +45,17 @@ public partial class WaveViewModel : ObservableRecipient
         _audioDevice = audioDevice;
     }
 
-    private bool _isPlaying = false;
+    [RelayCommand]
+    public async Task OpenFileAsync()
+    {
+        var file = await FilePickerHelper.ShowOpenPickerAsync();
+        if (file == null)
+            return;
+
+        var audioFile = await _waveService.OpenAsync(file.Path);
+        AudioList.Add(audioFile);
+        SelectedAudioIndex = AudioList.Count - 1;
+    }
 
     [RelayCommand]
     private void TogglePlayPause()
@@ -47,32 +73,32 @@ public partial class WaveViewModel : ObservableRecipient
     [RelayCommand]
     private void Play()
     {
-        _waveService.Play(AudioList[SelectedAudioIndex]);
-        _isPlaying = true;
+        if (AudioList.Count > 0 && SelectedAudioIndex >= 0)
+        {
+            _waveService.Play(AudioList[SelectedAudioIndex].FilePath);
+            _isPlaying = true;
+        }
     }
 
     [RelayCommand]
     private void Pause()
     {
-        _waveService.Pause(AudioList[SelectedAudioIndex]);
-        _isPlaying = false;
+        if (AudioList.Count > 0 && SelectedAudioIndex >= 0)
+        {
+            _waveService.Pause(AudioList[SelectedAudioIndex].FilePath);
+            _isPlaying = false;
+        }
     }
 
     [RelayCommand]
     private void Close()
     {
-        _waveService.Close(AudioList[SelectedAudioIndex]);
-        AudioList.Remove(AudioList[SelectedAudioIndex]);
-    }
-
-    [RelayCommand]
-    public async Task OpenFileAsync()
-    {
-        var file = await FilePickerHelper.ShowOpenPickerAsync();
-        if (file == null)
-            return;
-
-        _waveService.Open(file.Path);
-        AudioList.Add(file.Path);
+        if (AudioList.Count > 0 && SelectedAudioIndex >= 0)
+        {
+            var currentFile = AudioList[SelectedAudioIndex];
+            _waveService.Close(currentFile.FilePath);
+            AudioList.Remove(currentFile);
+            _isPlaying = false;
+        }
     }
 }

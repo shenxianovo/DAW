@@ -27,7 +27,7 @@ public partial class SettingsViewModel : ObservableRecipient
     {
         _audioDevice = audioDevice;
 
-        GetInputDevice();
+        GetInputDevices();
         GetOutputDevices();
 
         if (InputDevices.Count > 0)
@@ -49,7 +49,7 @@ public partial class SettingsViewModel : ObservableRecipient
         _audioDevice.SetOutputDevice(deviceName);
     }
 
-    private void GetInputDevice()
+    private void GetInputDevices()
     {
         InputDevices.Clear();
         var inputDevices = _audioDevice.GetInputDevices();

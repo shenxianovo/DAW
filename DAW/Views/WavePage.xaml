@@ -7,6 +7,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
+    xmlns:models="using:DAW.Wave.Models"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     KeyboardAcceleratorPlacementMode="Hidden"
@@ -36,25 +37,46 @@
             </Grid.RowDefinitions>
 
             <!-- Audio list -->
-            <ListView Grid.Row="0"
-                  ItemsSource="{x:Bind ViewModel.AudioList, Mode=OneWay}"
-                  SelectedIndex="{x:Bind ViewModel.SelectedAudioIndex, Mode=TwoWay}">
-                <ListView.ItemTemplate>
-                    <DataTemplate x:DataType="x:String">
-                        <TextBlock Text="{x:Bind Mode=TwoWay}"/>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-                <interactivity:Interaction.Behaviors>
-                    <interactivity:EventTriggerBehavior EventName="DoubleTapped">
-                        <interactivity:InvokeCommandAction Command="{x:Bind ViewModel.OpenFileCommand}" CommandParameter="{Binding}"/>
-                    </interactivity:EventTriggerBehavior>
-                </interactivity:Interaction.Behaviors>
-            </ListView>
+            <Border Grid.Row="0"
+                    BorderThickness="2" BorderBrush="Gray" CornerRadius="10"
+                    Margin="0, 0, 2, 2">
+                <TabView IsAddTabButtonVisible="False"
+                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    <TabViewItem Header="文件" IsClosable="False">
+                        <ListView ItemsSource="{x:Bind ViewModel.AudioList, Mode=OneWay}"
+                                  SelectedIndex="{x:Bind ViewModel.SelectedAudioIndex, Mode=TwoWay}"
+                                  HorizontalAlignment="Stretch"
+                                  VerticalAlignment="Stretch"
+                                  Padding="4">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="models:AudioFile">
+                                    <TextBlock Text="{x:Bind Mode=TwoWay, Path=FileName}"/>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                            <interactivity:Interaction.Behaviors>
+                                <interactivity:EventTriggerBehavior EventName="DoubleTapped">
+                                    <interactivity:InvokeCommandAction Command="{x:Bind ViewModel.OpenFileCommand}" CommandParameter="{Binding}"/>
+                                </interactivity:EventTriggerBehavior>
+                            </interactivity:Interaction.Behaviors>
+                        </ListView>
+                    </TabViewItem>
+                </TabView>
+            </Border>
 
             <Border Grid.Row="1"
-                BorderThickness="2" BorderBrush="Gray" CornerRadius="10"
-                Padding="10">
+                    BorderThickness="2" BorderBrush="Gray" CornerRadius="10"
+                    Margin="0, 2, 2, 0">
 
+                <TabView IsAddTabButtonVisible="False">
+                    <TabViewItem Header="属性" IsClosable="False">
+                        <TextBlock Padding="10"
+                                   Text="{x:Bind ViewModel.CurrentAudioFile.DisplayInfo, Mode=OneWay}"
+                                   TextWrapping="Wrap"/>
+                    </TabViewItem>
+                    <TabViewItem Header="效果" IsClosable="False">
+                        <TextBlock Padding="10" Text="效果设置" FontWeight="Bold"/>
+                    </TabViewItem>
+                </TabView>
             </Border>
         </Grid>
 
@@ -69,9 +91,15 @@
             <Rectangle Grid.Row="1" Fill="Azure"/>
 
             <StackPanel Grid.Row="2" Orientation="Horizontal">
-                <Button Content="Play" Command="{x:Bind ViewModel.PlayCommand}"/>
-                <Button Content="Pause" Command="{x:Bind ViewModel.PauseCommand}"/>
-                <Button Content="Close" Command="{x:Bind ViewModel.CloseCommand}"/>
+                <Button Command="{x:Bind ViewModel.PlayCommand}">
+                    <FontIcon Glyph="&#xE768;"/>
+                </Button>
+                <Button Command="{x:Bind ViewModel.PauseCommand}">
+                    <FontIcon Glyph="&#xE769;"/>
+                </Button>
+                <Button Command="{x:Bind ViewModel.CloseCommand}">
+                    <FontIcon Glyph="&#xE894;"/>
+                </Button>
             </StackPanel>
         </Grid>
 
