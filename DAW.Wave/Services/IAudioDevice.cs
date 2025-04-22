@@ -8,9 +8,11 @@ namespace DAW.Wave.Services;
 
 public interface IAudioDevice
 {
-    IList<string> GetOutputDevices();
-    IList<string> GetInputDevices();
+    public IList<string> GetOutputDevices();
+    public IList<string> GetInputDevices();
 
-    void SetOutputDevice(string deviceName);
-    void SetInputDevice(string deviceName);
+    public int GetCurrentInputDeviceId();
+    public int GetCurrentOutputDeviceId();
+    public void SetOutputDevice(string deviceName);
+    public void SetInputDevice(string deviceName);
 }

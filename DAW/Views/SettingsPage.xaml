@@ -10,7 +10,8 @@
     xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     xmlns:winUi="using:CommunityToolkit.WinUI"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    NavigationCacheMode="Required">
 
     <StackPanel>
         <TextBlock Text="Settings" FontSize="30"/>

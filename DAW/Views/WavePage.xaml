@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="DAW.Views.WavePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -6,10 +6,74 @@
     xmlns:local="using:DAW.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    KeyboardAcceleratorPlacementMode="Hidden"
+    NavigationCacheMode="Required">
+
+    <Page.KeyboardAccelerators>
+        <KeyboardAccelerator Key="Space">
+            <interactivity:Interaction.Behaviors>
+                <interactivity:EventTriggerBehavior EventName="Invoked">
+                    <interactivity:InvokeCommandAction Command="{x:Bind ViewModel.TogglePlayPauseCommand}"
+                                                       CommandParameter="{Binding}"/>
+                </interactivity:EventTriggerBehavior>
+            </interactivity:Interaction.Behaviors>
+        </KeyboardAccelerator>
+    </Page.KeyboardAccelerators>
 
     <Grid>
-        <TextBlock Text="{x:Bind ViewModel.Name}"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition Width="7*"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="4*"/>
+                <RowDefinition Height="6*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Audio list -->
+            <ListView Grid.Row="0"
+                  ItemsSource="{x:Bind ViewModel.AudioList, Mode=OneWay}"
+                  SelectedIndex="{x:Bind ViewModel.SelectedAudioIndex, Mode=TwoWay}">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                        <TextBlock Text="{x:Bind Mode=TwoWay}"/>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+                <interactivity:Interaction.Behaviors>
+                    <interactivity:EventTriggerBehavior EventName="DoubleTapped">
+                        <interactivity:InvokeCommandAction Command="{x:Bind ViewModel.OpenFileCommand}" CommandParameter="{Binding}"/>
+                    </interactivity:EventTriggerBehavior>
+                </interactivity:Interaction.Behaviors>
+            </ListView>
+
+            <Border Grid.Row="1"
+                BorderThickness="2" BorderBrush="Gray" CornerRadius="10"
+                Padding="10">
+
+            </Border>
+        </Grid>
+
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Rectangle Grid.Row="0" Fill="SkyBlue"/>
+            <Rectangle Grid.Row="1" Fill="Azure"/>
+
+            <StackPanel Grid.Row="2" Orientation="Horizontal">
+                <Button Content="Play" Command="{x:Bind ViewModel.PlayCommand}"/>
+                <Button Content="Pause" Command="{x:Bind ViewModel.PauseCommand}"/>
+                <Button Content="Close" Command="{x:Bind ViewModel.CloseCommand}"/>
+            </StackPanel>
+        </Grid>
+
     </Grid>
 </Page>

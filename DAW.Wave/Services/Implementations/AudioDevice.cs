@@ -9,8 +9,8 @@ namespace DAW.Wave.Services.Implementations;
 
 public class AudioDevice : IAudioDevice
 {
-    private int _currentOutDeviceId;
-    private int _currentInDeviceId;
+    private static int _currentOutDeviceId = 0;
+    private static int _currentInDeviceId = 0;
 
     public IList<string> GetOutputDevices()
     {
@@ -33,6 +33,10 @@ public class AudioDevice : IAudioDevice
         }
         return devices;
     }
+
+    public int GetCurrentInputDeviceId() => _currentInDeviceId;
+
+    public int GetCurrentOutputDeviceId() => _currentOutDeviceId;
 
     public void SetOutputDevice(string deviceName)
     {
