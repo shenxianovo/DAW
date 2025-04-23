@@ -91,7 +91,7 @@
 
             <!-- 波形预览图 -->
             <controls:WavePreviewControl Grid.Row="0"
-                                         AudioData="{x:Bind ViewModel.CurrentAudioData, Mode=OneWay}"
+                                         AudioData="{x:Bind ViewModel.CurrentAudioDataPreview, Mode=OneWay}"
                                          HorizontalAlignment="Stretch"
                                          Height="40"/>
             <Rectangle Grid.Row="1" Fill="SkyBlue"/>

@@ -42,6 +42,9 @@ public partial class WaveViewModel : ObservableRecipient
     [ObservableProperty]
     public partial float[]? CurrentAudioData { get; set; }
 
+    [ObservableProperty]
+    public partial float[]? CurrentAudioDataPreview { get; set; }
+
     public WaveViewModel(IWaveService waveService, IAudioDevice audioDevice)
     {
         _waveService = waveService;
@@ -58,8 +61,11 @@ public partial class WaveViewModel : ObservableRecipient
         var audioFile = await _waveService.OpenAsync(file.Path);
         AudioList.Add(audioFile);
 
-        var data = await _waveService.LoadWaveAsync(file.Path);
-        CurrentAudioData = data;
+        var rawData = await _waveService.LoadWaveAsync(file.Path);
+        CurrentAudioData = rawData;
+
+        int blockSize = 2048;
+        CurrentAudioDataPreview = WaveDataHelper.GeneratePeakArray(rawData, blockSize);
 
         SelectedAudioIndex = AudioList.Count - 1;
     }
