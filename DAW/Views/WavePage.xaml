@@ -8,6 +8,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     xmlns:models="using:DAW.Wave.Models"
+    xmlns:controls="using:DAW.Controls"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     KeyboardAcceleratorPlacementMode="Hidden"
@@ -26,8 +27,8 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="3*"/>
-            <ColumnDefinition Width="7*"/>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="8*"/>
         </Grid.ColumnDefinitions>
 
         <Grid Grid.Column="0">
@@ -82,15 +83,21 @@
 
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <Rectangle Grid.Row="0" Fill="SkyBlue"/>
-            <Rectangle Grid.Row="1" Fill="Azure"/>
+            <!-- 波形预览图 -->
+            <controls:WavePreviewControl Grid.Row="0"
+                                         AudioData="{x:Bind ViewModel.CurrentAudioData, Mode=OneWay}"
+                                         HorizontalAlignment="Stretch"
+                                         Height="40"/>
+            <Rectangle Grid.Row="1" Fill="SkyBlue"/>
+            <Rectangle Grid.Row="2" Fill="Azure"/>
 
-            <StackPanel Grid.Row="2" Orientation="Horizontal">
+            <StackPanel Grid.Row="3" Orientation="Horizontal">
                 <Button Command="{x:Bind ViewModel.PlayCommand}">
                     <FontIcon Glyph="&#xE768;"/>
                 </Button>

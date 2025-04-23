@@ -39,6 +39,9 @@ public partial class WaveViewModel : ObservableRecipient
     [NotifyPropertyChangedFor(nameof(CurrentAudioFile))]
     public partial int SelectedAudioIndex { get; set; } = -1;
 
+    [ObservableProperty]
+    public partial float[]? CurrentAudioData { get; set; }
+
     public WaveViewModel(IWaveService waveService, IAudioDevice audioDevice)
     {
         _waveService = waveService;
@@ -54,6 +57,10 @@ public partial class WaveViewModel : ObservableRecipient
 
         var audioFile = await _waveService.OpenAsync(file.Path);
         AudioList.Add(audioFile);
+
+        var data = await _waveService.LoadWaveAsync(file.Path);
+        CurrentAudioData = data;
+
         SelectedAudioIndex = AudioList.Count - 1;
     }
 

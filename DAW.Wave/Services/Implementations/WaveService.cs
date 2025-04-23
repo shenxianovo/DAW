@@ -46,6 +46,23 @@ public class WaveService : IWaveService
         return audioFile;
     }
 
+    public async Task<float[]> LoadWaveAsync(string filePath)
+    {
+        return await Task.Run(() =>
+        {
+            var samples = new List<float>();
+            using var reader = new AudioFileReader(filePath);
+            float[] buffer = new float[4096];
+            int read;
+            while ((read = reader.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                // 只将有效样本收集到列表
+                samples.AddRange(buffer.Take(read));
+            }
+            return samples.ToArray();
+        });
+    }
+
     public void Close(string filePath)
     {
         if (_waveOuts.TryRemove(filePath, out var waveOut))
