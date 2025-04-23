@@ -91,7 +91,9 @@
 
             <!-- 波形预览图 -->
             <controls:WavePreviewControl Grid.Row="0"
-                                         AudioData="{x:Bind ViewModel.CurrentAudioDataPreview, Mode=OneWay}"
+                                         AudioData="{x:Bind ViewModel.CurrentAudioFile.AudioDataPreview, Mode=OneWay}"
+                                         StartSampleIndex="{x:Bind ViewModel.CurrentAudioFile.DisplayStartSampleIndex, Mode=TwoWay}"
+                                         EndSampleIndex="{x:Bind ViewModel.CurrentAudioFile.DisplayEndSampleIndex, Mode=TwoWay}"
                                          HorizontalAlignment="Stretch"
                                          Height="40"/>
             <Rectangle Grid.Row="1" Fill="SkyBlue"/>
@@ -107,6 +109,8 @@
                 <Button Command="{x:Bind ViewModel.CloseCommand}">
                     <FontIcon Glyph="&#xE894;"/>
                 </Button>
+                <TextBlock Text="{x:Bind ViewModel.CurrentAudioFile.DisplayStartSampleIndex, Mode=OneWay}"/>
+                <TextBlock Text="{x:Bind ViewModel.CurrentAudioFile.DisplayEndSampleIndex, Mode=OneWay}"/>
             </StackPanel>
         </Grid>
 

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DAW.Wave.Models;
+using DAW.Wave.Utils;
 
 namespace DAW.Wave.Services.Implementations;
 
@@ -25,14 +26,6 @@ public class WaveService : IWaveService
 
         // 读取元数据信息并创建WaveOutEvent
         var audioFileReader = new AudioFileReader(pcmPath);
-        var waveOut = new WaveOutEvent
-        {
-            DeviceNumber = _audioDevice.GetCurrentOutputDeviceId()
-        };
-        waveOut.Init(audioFileReader);
-        _waveOuts[pcmPath] = waveOut; // 以转换后路径为Key
-
-        // 给AudioFile赋值
         var audioFile = new AudioFile
         {
             FilePath = pcmPath,
@@ -43,6 +36,20 @@ public class WaveService : IWaveService
             BitDepth = audioFileReader.WaveFormat.BitsPerSample,
             Format = "PCM 32-bit"
         };
+
+        // 加载完整音频数据
+        audioFile.AudioData = await LoadWaveAsync(pcmPath);
+
+        // 生成预览数据
+        int blockSize = 2048; // 可调整块大小
+        audioFile.AudioDataPreview = WaveDataHelper.GeneratePeakArray(audioFile.AudioData, blockSize);
+
+        var waveOut = new WaveOutEvent
+        {
+            DeviceNumber = _audioDevice.GetCurrentOutputDeviceId()
+        };
+        waveOut.Init(audioFileReader);
+        _waveOuts[pcmPath] = waveOut; // 以转换后路径为Key
         return audioFile;
     }
 

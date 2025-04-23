@@ -8,6 +8,8 @@ namespace DAW.Wave.Models;
 
 public class AudioFile
 {
+    #region Audio MetaInfo
+
     public string FilePath { get; set; } = string.Empty;
     public string FileName { get; set; } = string.Empty;
     public TimeSpan Duration { get; set; }
@@ -15,6 +17,22 @@ public class AudioFile
     public int Channels { get; set; }
     public int BitDepth { get; set; }
     public string Format { get; set; } = string.Empty; // PCM or Float, etc.
+
+    #endregion
+
+    #region Editor Info
+
+    public int DisplayStartSampleIndex { get; set; }
+    public int DisplayEndSampleIndex { get; set; }
+
+    #endregion
+
+    #region Audio Data
+
+    public float[]? AudioData { get; set; }
+    public float[]? AudioDataPreview { get; set; }
+
+    #endregion
 
     public string DisplayInfo => $"{FileName}\n" +
                                  $"{Format}\n" +

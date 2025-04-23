@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Windows.Foundation.Metadata;
 
-namespace DAW.Utils;
+namespace DAW.Wave.Utils;
 
 public static class WaveDataHelper
 {

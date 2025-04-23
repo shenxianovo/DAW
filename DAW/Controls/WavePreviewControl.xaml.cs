@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -24,6 +25,8 @@ namespace DAW.Controls
 {
     public sealed partial class WavePreviewControl : UserControl
     {
+        #region Dependency Properties
+
         public float[]? AudioData
         {
             get => (float[]?)GetValue(AudioDataProperty);
@@ -31,16 +34,58 @@ namespace DAW.Controls
         }
 
         public static readonly DependencyProperty AudioDataProperty =
-            DependencyProperty.Register(nameof(AudioData), typeof(float[]), typeof(WavePreviewControl),
+            DependencyProperty.Register(
+                nameof(AudioData),
+                typeof(float[]),
+                typeof(WavePreviewControl),
                 new PropertyMetadata(null, OnAudioDataChanged));
+
+        // 可绑定的起始采样索引
+        public int StartSampleIndex
+        {
+            get => (int)GetValue(StartSampleIndexProperty);
+            set => SetValue(StartSampleIndexProperty, value);
+        }
+
+        public static readonly DependencyProperty StartSampleIndexProperty =
+            DependencyProperty.Register(
+                nameof(StartSampleIndex),
+                typeof(int),
+                typeof(WavePreviewControl),
+                new PropertyMetadata(0));
+
+        // 可绑定的结束采样索引
+        public int EndSampleIndex
+        {
+            get => (int)GetValue(EndSampleIndexProperty);
+            set => SetValue(EndSampleIndexProperty, value);
+        }
+
+        public static readonly DependencyProperty EndSampleIndexProperty =
+            DependencyProperty.Register(
+                nameof(EndSampleIndex),
+                typeof(int),
+                typeof(WavePreviewControl),
+                new PropertyMetadata(0));
 
         private static void OnAudioDataChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is WavePreviewControl control)
             {
-                control.CanvasControl.Invalidate(); // 重新触发绘制
+                control.CanvasControl.Invalidate();
             }
         }
+
+        #endregion
+
+        #region Private Fields
+
+        // 标记当前是否在拖拽
+        private float _selectStartX;
+        private float _selectEndX;
+        private bool _isSelecting;
+
+        #endregion
 
         public WavePreviewControl()
         {
@@ -48,6 +93,12 @@ namespace DAW.Controls
         }
 
         private void CanvasControl_Draw(CanvasControl sender, CanvasDrawEventArgs args)
+        {
+            DrawWave(sender, args);
+            DrawSelectedArea(sender, args);
+        }
+
+        private void DrawWave(CanvasControl sender, CanvasDrawEventArgs args)
         {
             if (AudioData == null || AudioData.Length < 2)
                 return;
@@ -104,76 +155,73 @@ namespace DAW.Controls
 
             // 构造几何并填充
             using var geometry = CanvasGeometry.CreatePath(pathBuilder);
-            ds.FillGeometry(geometry, Microsoft.UI.Colors.SkyBlue);
+            ds.FillGeometry(geometry, Colors.SkyBlue);
 
             // 可选：画一道外框线
             //ds.DrawGeometry(geometry, Microsoft.UI.Colors.White);
         }
 
-        private void DrawPeak(CanvasControl sender, CanvasDrawEventArgs args)
+        private void DrawSelectedArea(CanvasControl sender, CanvasDrawEventArgs args)
         {
-            if (AudioData == null || AudioData.Length < 2)
-                return;
-
-            var ds = args.DrawingSession;
-            float width = (float)sender.ActualWidth;
-            float height = (float)sender.ActualHeight;
-            float middle = height / 2;
-
-            if (width <= 0) return;
-
-            // 峰值数组有若干对 (minVal, maxVal)
-            int totalPairs = AudioData.Length / 2;
-            float samplesPerX = (float)totalPairs / width;
-
-            for (int x = 0; x < (int)width; x++)
+            if (_isSelecting || IsValidSelection())
             {
-                int pairIndex = (int)(x * samplesPerX);
-                if (pairIndex >= totalPairs) break;
+                var ds = args.DrawingSession;
+                float left = Math.Min(_selectStartX, _selectEndX);
+                float right = Math.Max(_selectStartX, _selectEndX);
+                float height = (float)sender.ActualHeight;
 
-                float minVal = AudioData[pairIndex * 2];
-                float maxVal = AudioData[pairIndex * 2 + 1];
-
-                float yMin = middle - minVal * (height / 2);
-                float yMax = middle - maxVal * (height / 2);
-
-                // 这里用 SkyBlue 画竖线
-                ds.DrawLine(x, yMin, x, yMax, Microsoft.UI.Colors.SkyBlue);
+                ds.FillRectangle(left, 0, right - left, height, Color.FromArgb(60, 0, 120, 215));
+                ds.DrawRectangle(left, 0, right - left, height, Color.FromArgb(255, 0, 120, 215));
             }
         }
 
-        private void DrawAverage(CanvasControl sender, CanvasDrawEventArgs args)
+        // 按下鼠标（或手指）时记录起点
+        private void CanvasControl_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
-            if (AudioData == null || AudioData.Length < 2)
-                return;
+            float x = (float)e.GetCurrentPoint(CanvasControl).Position.X;
+            _selectStartX = x;
+            _selectEndX = x;
+            _isSelecting = true;
+            CanvasControl.Invalidate();
+        }
 
-            var ds = args.DrawingSession;
-            float width = (float)sender.ActualWidth;
-            float height = (float)sender.ActualHeight;
-            float middle = height / 2;
+        // 移动时更新终点
+        private void CanvasControl_PointerMoved(object sender, PointerRoutedEventArgs e)
+        {
+            if (!_isSelecting) return;
+            float x = (float)e.GetCurrentPoint(CanvasControl).Position.X;
+            _selectEndX = x;
+            CanvasControl.Invalidate();
+        }
 
-            if (width <= 0)
-                return;
+        // 抬起鼠标（或手指）时结束选择
+        private void CanvasControl_PointerReleased(object sender, PointerRoutedEventArgs e)
+        {
+            if (!_isSelecting) return;
+            _isSelecting = false;
 
-            int totalPoints = AudioData.Length;
-            // 计算每个采样点对应画布 X 坐标
-            float xStep = width / (totalPoints - 1);
+            CalculateSampleRange();
 
-            // 准备第一个点
-            Vector2 prevPoint = new Vector2(0, middle - (AudioData[0] * (height / 2)));
+            CanvasControl.Invalidate();
+        }
 
-            // 从第 1 个采样点开始，依次连接到前一个点
-            for (int i = 1; i < totalPoints; i++)
-            {
-                float x = i * xStep;
-                float amplitudeScale = 10.0f; // 自行调整倍率
-                float y = middle - (AudioData[i] * amplitudeScale * (height / 2));
-                Vector2 currentPoint = new Vector2(x, y);
+        private bool IsValidSelection() => Math.Abs(_selectEndX - _selectStartX) > 2;
+        private void CalculateSampleRange()
+        {
+            if (AudioData == null || AudioData.Length < 2) return;
+            float canvasWidth = (float)CanvasControl.ActualWidth;
+            if (canvasWidth <= 0) return;
 
-                ds.DrawLine(prevPoint, currentPoint, Colors.SkyBlue, 1f);
+            int totalPairs = AudioData.Length / 2;
+            float samplesPerPixel = totalPairs / canvasWidth;
+            float left = Math.Min(_selectStartX, _selectEndX);
+            float right = Math.Max(_selectStartX, _selectEndX);
 
-                prevPoint = currentPoint;
-            }
+            int start = (int)(left * samplesPerPixel);
+            int end = (int)(right * samplesPerPixel);
+            // 确保在范围内并更新依赖属性
+            StartSampleIndex = Math.Clamp(start, 0, totalPairs - 1);
+            EndSampleIndex = Math.Clamp(end, 0, totalPairs - 1);
         }
     }
 }

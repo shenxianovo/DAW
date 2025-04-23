@@ -16,11 +16,16 @@ namespace DAW.ViewModels;
 
 public partial class WaveViewModel : ObservableRecipient
 {
+    #region Services
+
     private readonly IWaveService _waveService;
     private readonly IAudioDevice _audioDevice;
 
+    #endregion
+
     private bool _isPlaying = false;
 
+    #region Observable Properties
     public ObservableCollection<AudioFile> AudioList { get; } = [];
 
     public AudioFile CurrentAudioFile
@@ -39,17 +44,15 @@ public partial class WaveViewModel : ObservableRecipient
     [NotifyPropertyChangedFor(nameof(CurrentAudioFile))]
     public partial int SelectedAudioIndex { get; set; } = -1;
 
-    [ObservableProperty]
-    public partial float[]? CurrentAudioData { get; set; }
-
-    [ObservableProperty]
-    public partial float[]? CurrentAudioDataPreview { get; set; }
+    #endregion
 
     public WaveViewModel(IWaveService waveService, IAudioDevice audioDevice)
     {
         _waveService = waveService;
         _audioDevice = audioDevice;
     }
+
+    #region Relay Commands
 
     [RelayCommand]
     public async Task OpenFileAsync()
@@ -60,12 +63,6 @@ public partial class WaveViewModel : ObservableRecipient
 
         var audioFile = await _waveService.OpenAsync(file.Path);
         AudioList.Add(audioFile);
-
-        var rawData = await _waveService.LoadWaveAsync(file.Path);
-        CurrentAudioData = rawData;
-
-        int blockSize = 2048;
-        CurrentAudioDataPreview = WaveDataHelper.GeneratePeakArray(rawData, blockSize);
 
         SelectedAudioIndex = AudioList.Count - 1;
     }
@@ -114,4 +111,6 @@ public partial class WaveViewModel : ObservableRecipient
             _isPlaying = false;
         }
     }
+
+    #endregion
 }
