@@ -9,6 +9,7 @@
     xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     xmlns:models="using:DAW.Wave.Models"
     xmlns:controls="using:DAW.Controls"
+    xmlns:winUi="using:CommunityToolkit.WinUI"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     KeyboardAcceleratorPlacementMode="Hidden"
@@ -42,7 +43,8 @@
                     BorderThickness="2" BorderBrush="Gray" CornerRadius="10"
                     Margin="0, 0, 2, 2">
                 <TabView IsAddTabButtonVisible="False"
-                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                         TabWidthMode="SizeToContent">
                     <TabViewItem Header="文件" IsClosable="False">
                         <ListView ItemsSource="{x:Bind ViewModel.AudioList, Mode=OneWay}"
                                   SelectedIndex="{x:Bind ViewModel.SelectedAudioIndex, Mode=TwoWay}"
@@ -68,7 +70,8 @@
                     BorderThickness="2" BorderBrush="Gray" CornerRadius="10"
                     Margin="0, 2, 2, 0">
 
-                <TabView IsAddTabButtonVisible="False">
+                <TabView IsAddTabButtonVisible="False"
+                         TabWidthMode="SizeToContent">
                     <TabViewItem Header="属性" IsClosable="False">
                         <TextBlock Padding="10"
                                    Text="{x:Bind ViewModel.CurrentAudioFile.DisplayInfo, Mode=OneWay}"
