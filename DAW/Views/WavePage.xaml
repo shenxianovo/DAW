@@ -93,12 +93,11 @@
             </Grid.RowDefinitions>
 
             <!-- 波形预览图 -->
-            <controls:WavePreviewControl Grid.Row="0"
-                                         AudioData="{x:Bind ViewModel.CurrentAudioFile.AudioDataPreview, Mode=OneWay}"
-                                         StartSampleIndex="{x:Bind ViewModel.CurrentAudioFile.DisplayStartSampleIndex, Mode=TwoWay}"
-                                         EndSampleIndex="{x:Bind ViewModel.CurrentAudioFile.DisplayEndSampleIndex, Mode=TwoWay}"
-                                         HorizontalAlignment="Stretch"
-                                         Height="40"/>
+            <controls:WaveViewControl Grid.Row="0"
+                                      AudioData="{x:Bind ViewModel.CurrentAudioFile.AudioData, Mode=OneWay}"
+                                      Channels="{x:Bind ViewModel.CurrentAudioFile.Channels, Mode=OneWay}"
+                                      HorizontalAlignment="Stretch"
+                                      Height="40"/>
             <Rectangle Grid.Row="1" Fill="SkyBlue"/>
             <Rectangle Grid.Row="2" Fill="Azure"/>
 

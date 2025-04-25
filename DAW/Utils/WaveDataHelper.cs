@@ -37,4 +37,39 @@ public static class WaveDataHelper
 
         return result.ToArray();
     }
+
+    public static float[][] GeneratePeakArrays(float[] audioData, int channels, int samplesPerPeak)
+    {
+        // This is a simple example; adapt as needed for efficiency
+        var results = new float[channels][];
+        var totalSamples = audioData.Length / channels;
+        int totalPeaks = (int)Math.Ceiling((double)totalSamples / samplesPerPeak);
+
+        for (int c = 0; c < channels; c++)
+        {
+            var channelPeaks = new List<float>(totalPeaks * 2);
+            for (int peakIndex = 0; peakIndex < totalPeaks; peakIndex++)
+            {
+                int start = peakIndex * samplesPerPeak;
+                int end = Math.Min(start + samplesPerPeak, totalSamples);
+
+                float minVal = float.MaxValue;
+                float maxVal = float.MinValue;
+                for (int i = start; i < end; i++)
+                {
+                    float sample = audioData[i * channels + c];
+                    if (sample < minVal) minVal = sample;
+                    if (sample > maxVal) maxVal = sample;
+                }
+                if (minVal == float.MaxValue) minVal = 0;
+                if (maxVal == float.MinValue) maxVal = 0;
+
+                channelPeaks.Add(minVal);
+                channelPeaks.Add(maxVal);
+            }
+            results[c] = channelPeaks.ToArray();
+        }
+
+        return results;
+    }
 }

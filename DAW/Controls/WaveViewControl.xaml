@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <UserControl
-    x:Class="DAW.Controls.WavePreviewControl"
+    x:Class="DAW.Controls.WaveViewControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:DAW.Controls"
@@ -10,11 +10,8 @@
     mc:Ignorable="d">
 
     <Grid>
-        <xaml:CanvasControl x:Name="CanvasControl"
+        <xaml:CanvasControl x:Name="PreviewCanvasControl"
                             Draw="CanvasControl_Draw"
-                            ClearColor="{StaticResource CanvasClearColor}"
-                            PointerPressed="CanvasControl_PointerPressed"
-                            PointerMoved="CanvasControl_PointerMoved"
-                            PointerReleased="CanvasControl_PointerReleased"/>
+                            ClearColor="{StaticResource CanvasClearColor}"/>
     </Grid>
 </UserControl>

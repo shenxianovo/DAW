@@ -14,7 +14,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="Controls\WavePreviewControl.xaml" />
     <None Remove="Views\SettingsPage.xaml" />
     <None Remove="Views\ShellPage.xaml" />
     <None Remove="Views\WavePage.xaml" />
@@ -70,7 +69,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Controls\WavePreviewControl.xaml">
+    <Page Update="Controls\WaveViewControl.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

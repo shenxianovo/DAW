@@ -5,7 +5,7 @@
     <None Update="App.xaml">
       <SubType>Designer</SubType>
     </None>
-    <Page Update="Controls\WavePreviewControl.xaml">
+    <Page Update="Controls\WaveViewControl.xaml">
       <SubType>Designer</SubType>
     </Page>
     <None Update="MainWindow.xaml">

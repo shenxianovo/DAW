@@ -40,10 +40,6 @@ public class WaveService : IWaveService
         // 加载完整音频数据
         audioFile.AudioData = await LoadWaveAsync(pcmPath);
 
-        // 生成预览数据
-        int blockSize = 2048; // 可调整块大小
-        audioFile.AudioDataPreview = WaveDataHelper.GeneratePeakArray(audioFile.AudioData, blockSize);
-
         var waveOut = new WaveOutEvent
         {
             DeviceNumber = _audioDevice.GetCurrentOutputDeviceId()
@@ -102,14 +98,14 @@ public class WaveService : IWaveService
             // 这里简单用一个临时文件名
             // TODO: 更改路径
             var fileName = System.IO.Path.GetFileName(sourcePath);
-            var targetPath = System.IO.Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+            var cachePath = System.IO.Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                 "DAW", fileName);
 
             using var reader = new MediaFoundationReader(sourcePath);
             using var resampler = new MediaFoundationResampler(reader,
                 new WaveFormat(reader.WaveFormat.SampleRate, 32, reader.WaveFormat.Channels));
-            WaveFileWriter.CreateWaveFile(targetPath, resampler);
-            return targetPath;
+            WaveFileWriter.CreateWaveFile(cachePath, resampler);
+            return cachePath;
         });
     }
 }

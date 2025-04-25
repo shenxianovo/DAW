@@ -22,15 +22,14 @@ public class AudioFile
 
     #region Editor Info
 
-    public int DisplayStartSampleIndex { get; set; }
-    public int DisplayEndSampleIndex { get; set; }
+    public long DisplayStartSampleIndex { get; set; }
+    public long DisplayEndSampleIndex { get; set; }
 
     #endregion
 
     #region Audio Data
 
-    public float[]? AudioData { get; set; }
-    public float[]? AudioDataPreview { get; set; }
+    public float[] AudioData { get; set; }
 
     #endregion
 
