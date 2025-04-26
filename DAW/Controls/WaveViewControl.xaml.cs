@@ -54,6 +54,79 @@ namespace DAW.Controls
                 typeof(WaveViewControl),
                 new PropertyMetadata(1));
 
+        public long VisibleLeftSample
+        {
+            get => (long)GetValue(VisibleLeftSampleProperty);
+            set => SetValue(VisibleLeftSampleProperty, value);
+        }
+
+        public static readonly DependencyProperty VisibleLeftSampleProperty =
+            DependencyProperty.Register(
+                nameof(VisibleLeftSample),
+                typeof(long),
+                typeof(WaveViewControl),
+                new PropertyMetadata(0L, OnBoundsChanged));
+
+        public long VisibleRightSample
+        {
+            get => (long)GetValue(VisibleRightSampleProperty);
+            set => SetValue(VisibleRightSampleProperty, value);
+        }
+
+        public static readonly DependencyProperty VisibleRightSampleProperty =
+            DependencyProperty.Register(
+                nameof(VisibleRightSample),
+                typeof(long),
+                typeof(WaveViewControl),
+                new PropertyMetadata(0L, OnBoundsChanged));
+
+        public long SelectedLeftSample
+        {
+            get => (long)GetValue(SelectedLeftSampleProperty);
+            set => SetValue(SelectedLeftSampleProperty, value);
+        }
+
+        public static readonly DependencyProperty SelectedLeftSampleProperty =
+            DependencyProperty.Register(
+                nameof(SelectedLeftSample),
+                typeof(long),
+                typeof(WaveViewControl),
+                new PropertyMetadata(0L, OnBoundsChanged));
+
+        public long SelectedRightSample
+        {
+            get => (long)GetValue(SelectedRightSampleProperty);
+            set => SetValue(SelectedRightSampleProperty, value);
+        }
+
+        public static readonly DependencyProperty SelectedRightSampleProperty =
+            DependencyProperty.Register(
+                nameof(SelectedRightSample),
+                typeof(long),
+                typeof(WaveViewControl),
+                new PropertyMetadata(0L, OnBoundsChanged));
+
+        public long PlaybackPositionSample
+        {
+            get => (long)GetValue(PlaybackPositionSampleProperty);
+            set => SetValue(PlaybackPositionSampleProperty, value);
+        }
+
+        public static readonly DependencyProperty PlaybackPositionSampleProperty =
+            DependencyProperty.Register(
+                nameof(PlaybackPositionSample),
+                typeof(long),
+                typeof(WaveViewControl),
+                new PropertyMetadata(0L, OnBoundsChanged));
+
+        #endregion
+
+        #region Private Fields
+
+        private bool _isDraggingLeft;
+        private bool _isDraggingRight;
+        private float _dragOffset; // 记录拖动时指针与线位置的偏移
+
         #endregion
 
         public WaveViewControl()
@@ -70,6 +143,79 @@ namespace DAW.Controls
                 control._peakArrays = null;
                 control.PreviewCanvasControl.Invalidate();
             }
+        }
+
+        private static void OnBoundsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is WaveViewControl control)
+            {
+                control.PreviewCanvasControl.Invalidate();
+            }
+        }
+
+        private void OnCanvasPointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            var point = e.GetCurrentPoint(PreviewCanvasControl);
+            float x = (float)point.Position.X;
+
+            float canvasWidth = (float)PreviewCanvasControl.ActualWidth;
+            float canvasHeight = (float)PreviewCanvasControl.ActualHeight;
+            if (canvasWidth <= 0 || canvasHeight <= 0 || AudioData == null) return;
+
+            long totalSamples = AudioData.Length / Math.Max(Channels, 1);
+            float pxPerSample = totalSamples > 0 ? canvasWidth / totalSamples : 0;
+
+            float vLeftX = VisibleLeftSample * pxPerSample;
+            float vRightX = VisibleRightSample * pxPerSample;
+            if (vRightX < vLeftX) (vLeftX, vRightX) = (vRightX, vLeftX);
+
+            // 允许 5 像素左右的可点击范围
+            const float grabZone = 5f;
+
+            if (Math.Abs(x - vLeftX) <= grabZone)
+            {
+                _isDraggingLeft = true;
+                _dragOffset = x - vLeftX;
+            }
+            else if (Math.Abs(x - vRightX) <= grabZone)
+            {
+                _isDraggingRight = true;
+                _dragOffset = x - vRightX;
+            }
+        }
+
+        private void OnCanvasPointerMoved(object sender, PointerRoutedEventArgs e)
+        {
+            if (!_isDraggingLeft && !_isDraggingRight) return;
+
+            var point = e.GetCurrentPoint(PreviewCanvasControl);
+            float x = (float)point.Position.X;
+
+            float canvasWidth = (float)PreviewCanvasControl.ActualWidth;
+            if (canvasWidth <= 0 || AudioData == null) return;
+
+            long totalSamples = AudioData.Length / Math.Max(Channels, 1);
+            float pxPerSample = totalSamples > 0 ? canvasWidth / totalSamples : 0;
+
+            // 计算新的采样索引，并限制在范围内
+            long newSample = (long)Math.Round((x - _dragOffset) / pxPerSample);
+            newSample = Math.Clamp(newSample, 0, totalSamples - 1);
+
+            if (_isDraggingLeft)
+            {
+                VisibleLeftSample = newSample;
+            }
+            else if (_isDraggingRight)
+            {
+                VisibleRightSample = newSample;
+            }
+        }
+
+        private void OnCanvasPointerReleased(object sender, PointerRoutedEventArgs e)
+        {
+            _isDraggingLeft = false;
+            _isDraggingRight = false;
+            _dragOffset = 0;
         }
 
         private void CanvasControl_Draw(CanvasControl sender, CanvasDrawEventArgs args)
@@ -99,6 +245,7 @@ namespace DAW.Controls
             }
 
             WavePreview_DrawWave(sender, args);
+            WavePreview_DrawBoundaries(sender, args);
         }
 
         #region Wave Preview Helpers
@@ -186,6 +333,48 @@ namespace DAW.Controls
             ds.FillGeometry(geometry, Colors.SkyBlue);
         }
 
+        private void WavePreview_DrawBoundaries(CanvasControl sender, CanvasDrawEventArgs args)
+        {
+            if (AudioData == null || AudioData.Length < 1 || Channels < 1) return;
+
+            var ds = args.DrawingSession;
+            float canvasWidth = (float)sender.ActualWidth;
+            float canvasHeight = (float)sender.ActualHeight;
+            if (canvasWidth <= 0 || canvasHeight <= 0) return;
+
+            int totalSamples = AudioData.Length / Channels;
+            if (totalSamples <= 0) return;
+
+            float pxPerSample = canvasWidth / totalSamples;
+
+            // --- Visible range lines ---
+            float vLeftX = VisibleLeftSample * pxPerSample;
+            float vRightX = VisibleRightSample * pxPerSample;
+            if (vRightX < vLeftX) (vLeftX, vRightX) = (vRightX, vLeftX);
+
+            ds.DrawLine(vLeftX, 0, vLeftX, canvasHeight, Colors.Gray);
+            ds.DrawLine(vRightX, 0, vRightX, canvasHeight, Colors.Gray);
+
+            // Optional: fill the visible region if desired
+             ds.FillRectangle(vLeftX, 0, vRightX - vLeftX, canvasHeight, Color.FromArgb(30, 0, 0, 0));
+
+            // --- Selected range lines + semi-transparent fill ---
+            float sLeftX = SelectedLeftSample * pxPerSample;
+            float sRightX = SelectedRightSample * pxPerSample;
+            if (sRightX < sLeftX) (sLeftX, sRightX) = (sRightX, sLeftX);
+
+            ds.DrawLine(sLeftX, 0, sLeftX, canvasHeight, Colors.Red);
+            ds.DrawLine(sRightX, 0, sRightX, canvasHeight, Colors.Red);
+
+            // Fill selection area with semi-transparency
+            if (sRightX > sLeftX)
+            {
+                ds.FillRectangle(sLeftX, 0, sRightX - sLeftX, canvasHeight, Color.FromArgb(60, 0, 120, 215));
+            }
+
+            float progressX = PlaybackPositionSample * pxPerSample;
+            ds.DrawLine(progressX, 0, progressX, canvasHeight, Colors.Red);
+        }
 
         #endregion
 

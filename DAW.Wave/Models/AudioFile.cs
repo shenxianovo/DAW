@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace DAW.Wave.Models;
 
-public class AudioFile
+[ObservableObject]
+public partial class AudioFile
 {
     #region Audio MetaInfo
 
@@ -22,8 +24,12 @@ public class AudioFile
 
     #region Editor Info
 
-    public long DisplayStartSampleIndex { get; set; }
-    public long DisplayEndSampleIndex { get; set; }
+    [ObservableProperty]
+    public partial long VisibleLeftSampleIndex { get; set; }
+    [ObservableProperty]
+    public partial long VisibleRightSampleIndex { get; set; }
+    [ObservableProperty]
+    public partial long PlaybackPositionSampleIndex { get; set; }
 
     #endregion
 

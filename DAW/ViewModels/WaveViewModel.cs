@@ -23,7 +23,16 @@ public partial class WaveViewModel : ObservableRecipient
 
     #endregion
 
+    #region Private Fields
+
     private bool _isPlaying = false;
+    // 定时器，用于刷新播放进度
+    private readonly DispatcherTimer _timer;
+
+
+    #endregion
+
+
 
     #region Observable Properties
     public ObservableCollection<AudioFile> AudioList { get; } = [];
@@ -50,6 +59,10 @@ public partial class WaveViewModel : ObservableRecipient
     {
         _waveService = waveService;
         _audioDevice = audioDevice;
+
+        _timer = new DispatcherTimer();
+        _timer.Interval = TimeSpan.FromMilliseconds(50);
+        _timer.Tick += (s, e) => UpdatePlaybackPosition();
     }
 
     #region Relay Commands
@@ -87,6 +100,7 @@ public partial class WaveViewModel : ObservableRecipient
         {
             _waveService.Play(AudioList[SelectedAudioIndex].FilePath);
             _isPlaying = true;
+            _timer.Start();
         }
     }
 
@@ -97,6 +111,7 @@ public partial class WaveViewModel : ObservableRecipient
         {
             _waveService.Pause(AudioList[SelectedAudioIndex].FilePath);
             _isPlaying = false;
+            _timer.Stop();
         }
     }
 
@@ -109,7 +124,21 @@ public partial class WaveViewModel : ObservableRecipient
             _waveService.Close(currentFile.FilePath);
             AudioList.Remove(currentFile);
             _isPlaying = false;
+            _timer.Stop();
         }
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    private void UpdatePlaybackPosition()
+    {
+        if (!_isPlaying || SelectedAudioIndex < 0 || SelectedAudioIndex >= AudioList.Count)
+            return;
+
+        long index = _waveService.GetPlaybackPositionSamples(CurrentAudioFile.FilePath);
+        CurrentAudioFile.PlaybackPositionSampleIndex = index;
     }
 
     #endregion

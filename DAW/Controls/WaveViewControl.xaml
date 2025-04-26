@@ -12,6 +12,9 @@
     <Grid>
         <xaml:CanvasControl x:Name="PreviewCanvasControl"
                             Draw="CanvasControl_Draw"
+                            PointerPressed="OnCanvasPointerPressed"
+                            PointerMoved="OnCanvasPointerMoved"
+                            PointerReleased="OnCanvasPointerReleased"
                             ClearColor="{StaticResource CanvasClearColor}"/>
     </Grid>
 </UserControl>
