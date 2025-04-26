@@ -356,7 +356,7 @@ namespace DAW.Controls
             ds.DrawLine(vRightX, 0, vRightX, canvasHeight, Colors.Gray);
 
             // Optional: fill the visible region if desired
-             ds.FillRectangle(vLeftX, 0, vRightX - vLeftX, canvasHeight, Color.FromArgb(30, 0, 0, 0));
+            ds.FillRectangle(vLeftX, 0, vRightX - vLeftX, canvasHeight, Color.FromArgb(30, 0, 0, 0));
 
             // --- Selected range lines + semi-transparent fill ---
             float sLeftX = SelectedLeftSample * pxPerSample;

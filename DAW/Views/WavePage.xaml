@@ -86,8 +86,6 @@
 
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
@@ -99,10 +97,8 @@
                                       VisibleLeftSample="{x:Bind ViewModel.CurrentAudioFile.VisibleLeftSampleIndex, Mode=TwoWay}"
                                       VisibleRightSample="{x:Bind ViewModel.CurrentAudioFile.VisibleRightSampleIndex, Mode=TwoWay}"
                                       PlaybackPositionSample="{x:Bind ViewModel.CurrentAudioFile.PlaybackPositionSampleIndex, Mode=OneWay}"
-                                      HorizontalAlignment="Stretch"
-                                      Height="40"/>
-            <Rectangle Grid.Row="1" Fill="SkyBlue"/>
-            <Rectangle Grid.Row="2" Fill="Azure"/>
+                                      HorizontalAlignment="Stretch"/>
+
 
             <StackPanel Grid.Row="3" Orientation="Horizontal">
                 <Button Command="{x:Bind ViewModel.PlayCommand}">
