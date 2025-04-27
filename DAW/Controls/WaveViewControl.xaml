@@ -21,10 +21,10 @@
                             Height="40"
                             x:Name="PreviewCanvasControl"
                             ClearColor="{StaticResource CanvasClearColor}"
-                            Draw="CanvasControl_Draw"
-                            PointerPressed="OnCanvasPointerPressed"
-                            PointerMoved="OnCanvasPointerMoved"
-                            PointerReleased="OnCanvasPointerReleased"/>
+                            Draw="PreviewCanvasControl_Draw"
+                            PointerPressed="OnPreviewCanvasPointerPressed"
+                            PointerMoved="OnPreviewCanvasPointerMoved"
+                            PointerReleased="OnPreviewCanvasPointerReleased"/>
 
         <xaml:CanvasControl Grid.Row="1"
                             x:Name="EditorCanvasControl"
@@ -33,7 +33,9 @@
                             PointerPressed="OnEditorCanvasPointerPressed"
                             PointerMoved="OnEditorCanvasPointerMoved"
                             PointerReleased="OnEditorCanvasPointerReleased"/>
-
-        <Rectangle Grid.Row="2" Fill="Azure"/>
+        <xaml:CanvasControl Grid.Row="2"
+                            x:Name="MelSpectrogramCanvasControl"
+                            ClearColor="{StaticResource CanvasClearColor}"
+                            Draw="MelSpectrogramCanvasControl_Draw"/>
     </Grid>
 </UserControl>

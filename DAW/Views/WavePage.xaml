@@ -96,11 +96,13 @@
                                       Channels="{x:Bind ViewModel.CurrentAudioFile.Channels, Mode=OneWay}"
                                       VisibleLeftSample="{x:Bind ViewModel.CurrentAudioFile.VisibleLeftSampleIndex, Mode=TwoWay}"
                                       VisibleRightSample="{x:Bind ViewModel.CurrentAudioFile.VisibleRightSampleIndex, Mode=TwoWay}"
+                                      SelectedLeftSample="{x:Bind ViewModel.CurrentAudioFile.SelectedLeftSampleIndex, Mode=TwoWay}"
+                                      SelectedRightSample="{x:Bind ViewModel.CurrentAudioFile.SelectedRightSampleIndex, Mode=TwoWay}"
                                       PlaybackPositionSample="{x:Bind ViewModel.CurrentAudioFile.PlaybackPositionSampleIndex, Mode=TwoWay}"
                                       HorizontalAlignment="Stretch"/>
 
 
-            <StackPanel Grid.Row="3" Orientation="Horizontal">
+            <StackPanel Grid.Row="1" Orientation="Horizontal">
                 <Button Command="{x:Bind ViewModel.PlayCommand}">
                     <FontIcon Glyph="&#xE768;"/>
                 </Button>
@@ -111,8 +113,16 @@
                     <FontIcon Glyph="&#xE894;"/>
                 </Button>
                 <StackPanel>
+                    <TextBlock Text="VisibleLeftSampleIndex"/>
                     <TextBlock Text="{x:Bind ViewModel.CurrentAudioFile.VisibleLeftSampleIndex, Mode=OneWay}"/>
+                    <TextBlock Text="VisibleRightSampleIndex"/>
                     <TextBlock Text="{x:Bind ViewModel.CurrentAudioFile.VisibleRightSampleIndex, Mode=OneWay}"/>
+                    <TextBlock Text="SelectedLeftSampleIndex"/>
+                    <TextBlock Text="{x:Bind ViewModel.CurrentAudioFile.SelectedLeftSampleIndex, Mode=OneWay}"/>
+                    <TextBlock Text="SelectedRightSampleIndex"/>
+                    <TextBlock Text="{x:Bind ViewModel.CurrentAudioFile.SelectedRightSampleIndex, Mode=OneWay}"/>
+                    <TextBlock Text="PlaybackPositionIndex"/>
+                    <TextBlock Text="{x:Bind ViewModel.CurrentAudioFile.PlaybackPositionSampleIndex, Mode=OneWay}"/>
                 </StackPanel>
             </StackPanel>
         </Grid>

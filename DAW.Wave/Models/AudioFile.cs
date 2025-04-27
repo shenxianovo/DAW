@@ -30,6 +30,10 @@ public partial class AudioFile
     public partial long VisibleRightSampleIndex { get; set; }
     [ObservableProperty]
     public partial long PlaybackPositionSampleIndex { get; set; }
+    [ObservableProperty]
+    public partial long SelectedLeftSampleIndex { get; set; }
+    [ObservableProperty]
+    public partial long SelectedRightSampleIndex { get; set; }
 
     #endregion
 
