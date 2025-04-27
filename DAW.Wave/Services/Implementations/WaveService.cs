@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DAW.Wave.Models;
-using DAW.Wave.Utils;
 
 namespace DAW.Wave.Services.Implementations;
 
@@ -42,8 +41,8 @@ public class WaveService : IWaveService
         // 加载完整音频数据
         audioFile.AudioData = await LoadWaveAsync(cachedPath);
         long totalFrames = audioFile.AudioData.Length / audioFile.Channels;
-        audioFile.VisibleLeftSampleIndex = 0;
-        audioFile.VisibleRightSampleIndex = totalFrames - 1;
+        audioFile.VisibleLeftFrameIndex = 0;
+        audioFile.VisibleRightFrameIndex = totalFrames - 1;
 
         var waveOut = new WaveOutEvent
         {

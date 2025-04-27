@@ -26,7 +26,7 @@ public static class WaveDataHelper
             {
                 int start = peakIndex * samplesPerPeak;
                 int end = Math.Min(start + samplesPerPeak, totalSamples);
-                    
+
                 float minVal = float.MaxValue;
                 float maxVal = float.MinValue;
                 for (int i = start; i < end; i++)

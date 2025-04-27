@@ -55,28 +55,28 @@ namespace DAW.Controls
                 typeof(WaveViewControl),
                 new PropertyMetadata(1));
 
-        public long VisibleLeftSample
+        public long VisibleLeftFrame
         {
-            get => (long)GetValue(VisibleLeftSampleProperty);
-            set => SetValue(VisibleLeftSampleProperty, value);
+            get => (long)GetValue(VisibleLeftFrameProperty);
+            set => SetValue(VisibleLeftFrameProperty, value);
         }
 
-        public static readonly DependencyProperty VisibleLeftSampleProperty =
+        public static readonly DependencyProperty VisibleLeftFrameProperty =
             DependencyProperty.Register(
-                nameof(VisibleLeftSample),
+                nameof(VisibleLeftFrame),
                 typeof(long),
                 typeof(WaveViewControl),
                 new PropertyMetadata(0L, OnBoundsChanged));
 
-        public long VisibleRightSample
+        public long VisibleRightFrame
         {
-            get => (long)GetValue(VisibleRightSampleProperty);
-            set => SetValue(VisibleRightSampleProperty, value);
+            get => (long)GetValue(VisibleRightFrameProperty);
+            set => SetValue(VisibleRightFrameProperty, value);
         }
 
-        public static readonly DependencyProperty VisibleRightSampleProperty =
+        public static readonly DependencyProperty VisibleRightFrameProperty =
             DependencyProperty.Register(
-                nameof(VisibleRightSample),
+                nameof(VisibleRightFrame),
                 typeof(long),
                 typeof(WaveViewControl),
                 new PropertyMetadata(0L, OnBoundsChanged));
@@ -128,7 +128,7 @@ namespace DAW.Controls
         {
             if (d is WaveViewControl control)
             {
-                control._peakArrays = null;
+                control._previewPeakArrays = null;
                 control._editorPeakArrays = null;
                 control.PreviewCanvasControl.Invalidate();
                 control.EditorCanvasControl.Invalidate();
@@ -157,7 +157,7 @@ namespace DAW.Controls
 
         #region Private Fields
 
-        private float[][]? _peakArrays;
+        private float[][]? _previewPeakArrays;
 
         private bool _isDraggingLeft;
         private bool _isDraggingRight;
@@ -165,8 +165,8 @@ namespace DAW.Controls
 
         private bool _isDraggingRange;           // 是否正在整体拖拽可见区
         private float _dragRangeStartX;          // 鼠标按下时初始 X
-        private long _panStartLeftSample;        // 鼠标按下时记录的 VisibleLeftSample
-        private long _panStartRightSample;       // 鼠标按下时记录的 VisibleRightSample
+        private long _panStartLeftSample;        // 鼠标按下时记录的 VisibleLeftFrame
+        private long _panStartRightSample;       // 鼠标按下时记录的 VisibleRightFrame
 
         #endregion
 
@@ -184,8 +184,8 @@ namespace DAW.Controls
             long totalSamples = AudioData.Length / Math.Max(Channels, 1);
             float pxPerSample = totalSamples > 0 ? canvasWidth / totalSamples : 0;
 
-            float vLeftX = VisibleLeftSample * pxPerSample;
-            float vRightX = VisibleRightSample * pxPerSample;
+            float vLeftX = VisibleLeftFrame * pxPerSample;
+            float vRightX = VisibleRightFrame * pxPerSample;
             if (vRightX < vLeftX) (vLeftX, vRightX) = (vRightX, vLeftX);
 
             // 允许 5 像素左右的可点击范围
@@ -211,8 +211,8 @@ namespace DAW.Controls
                     _isDraggingRange = true;
                     _dragRangeStartX = x;
                     // 记录当前可见区初始位置
-                    _panStartLeftSample = VisibleLeftSample;
-                    _panStartRightSample = VisibleRightSample;
+                    _panStartLeftSample = VisibleLeftFrame;
+                    _panStartRightSample = VisibleRightFrame;
                 }
             }
         }
@@ -232,13 +232,13 @@ namespace DAW.Controls
             {
                 long newSample = (long)Math.Round((x - _dragOffset) / pxPerSample);
                 newSample = Math.Clamp(newSample, 0, totalSamples - 1);
-                VisibleLeftSample = newSample;
+                VisibleLeftFrame = newSample;
             }
             else if (_isDraggingRight)
             {
                 long newSample = (long)Math.Round((x - _dragOffset) / pxPerSample);
                 newSample = Math.Clamp(newSample, 0, totalSamples - 1);
-                VisibleRightSample = newSample;
+                VisibleRightFrame = newSample;
             }
             else if (_isDraggingRange)
             {
@@ -266,8 +266,8 @@ namespace DAW.Controls
                     if (newLeft < 0) newLeft = 0; // 再次约束
                 }
 
-                VisibleLeftSample = newLeft;
-                VisibleRightSample = newRight;
+                VisibleLeftFrame = newLeft;
+                VisibleRightFrame = newRight;
             }
         }
 
@@ -292,9 +292,10 @@ namespace DAW.Controls
             if (AudioData == null || AudioData.Length < 1 || Channels < 1) return;
 
             // Lazy-load peak arrays
-            if (_peakArrays == null)
+            if (_previewPeakArrays == null)
             {
-                _peakArrays = WaveDataHelper.GeneratePeakArrays(AudioData, Channels, 512);
+                int samplesPerPeak = (int)(AudioData.Length / sender.ActualWidth);
+                _previewPeakArrays = WaveDataHelper.GeneratePeakArrays(AudioData, Channels, samplesPerPeak);
             }
 
             WavePreview_DrawWave(sender, args);
@@ -308,7 +309,7 @@ namespace DAW.Controls
             var ds = args.DrawingSession;
             float canvasWidth = (float)sender.ActualWidth;
             float canvasHeight = (float)sender.ActualHeight;
-            if (canvasWidth <= 0 || canvasHeight <= 0 || _peakArrays == null) return;
+            if (canvasWidth <= 0 || canvasHeight <= 0 || _previewPeakArrays == null) return;
 
             // Spacing of 5px between channels
             float spacing = 5f;
@@ -321,7 +322,7 @@ namespace DAW.Controls
             // Draw each channel
             for (int ch = 0; ch < Channels; ch++)
             {
-                float[] channelPeaks = _peakArrays[ch];
+                float[] channelPeaks = _previewPeakArrays[ch];
                 if (channelPeaks.Length < 2) continue;
 
                 // Calculate vertical offset for current channel
@@ -401,8 +402,8 @@ namespace DAW.Controls
             float pxPerSample = canvasWidth / totalSamples;
 
             // --- Visible range lines ---
-            float vLeftX = VisibleLeftSample * pxPerSample;
-            float vRightX = VisibleRightSample * pxPerSample;
+            float vLeftX = VisibleLeftFrame * pxPerSample;
+            float vRightX = VisibleRightFrame * pxPerSample;
             if (vRightX < vLeftX) (vLeftX, vRightX) = (vRightX, vLeftX);
 
             ds.DrawLine(vLeftX, 0, vLeftX, canvasHeight, Colors.Gray);
@@ -435,21 +436,17 @@ namespace DAW.Controls
         #endregion
 
         #region Wave Editor
+
         private bool _isSelecting;
         private float _editorPointerDownX;
+        private float _resolution;
 
         private float[][]? _editorPeakArrays;
         private void EditorCanvasControl_Draw(CanvasControl sender, CanvasDrawEventArgs args)
         {
             if (AudioData == null || AudioData.Length < 1 || Channels < 1) return;
 
-            if (_editorPeakArrays == null)
-            {
-                if (VisibleRightSample - VisibleLeftSample > 2048 * 100)
-                    _editorPeakArrays = WaveDataHelper.GeneratePeakArrays(AudioData, Channels, 2048);
-                else
-                    _editorPeakArrays = WaveDataHelper.GeneratePeakArrays(AudioData, Channels, 1);
-            }
+            GenerateEditorPeakArraysIfNeeded();
 
             var ds = args.DrawingSession;
             float canvasWidth = (float)sender.ActualWidth;
@@ -460,9 +457,9 @@ namespace DAW.Controls
             DrawEditorWave(ds, canvasWidth, canvasHeight);
 
             // 2. 绘制选中区域
-            float pxPerSample = canvasWidth / (VisibleRightSample - VisibleLeftSample + 1);
-            float sLeftX = (SelectedLeftSample - VisibleLeftSample) * pxPerSample;
-            float sRightX = (SelectedRightSample - VisibleLeftSample) * pxPerSample;
+            float pxPerSample = canvasWidth / (VisibleRightFrame - VisibleLeftFrame + 1);
+            float sLeftX = (SelectedLeftSample - VisibleLeftFrame) * pxPerSample;
+            float sRightX = (SelectedRightSample - VisibleLeftFrame) * pxPerSample;
             if (sRightX < sLeftX) (sLeftX, sRightX) = (sRightX, sLeftX);
 
             ds.DrawLine(sLeftX, 0, sLeftX, canvasHeight, Colors.Orange);
@@ -470,8 +467,37 @@ namespace DAW.Controls
             ds.FillRectangle(sLeftX, 0, sRightX - sLeftX, canvasHeight, Color.FromArgb(100, 255, 165, 0));
 
             // 3. 绘制播放进度线
-            float progressX = (PlaybackPositionSample - VisibleLeftSample) * pxPerSample;
+            float progressX = (PlaybackPositionSample - VisibleLeftFrame) * pxPerSample;
             ds.DrawLine(progressX, 0, progressX, canvasHeight, Colors.Red);
+        }
+
+        private void GenerateEditorPeakArraysIfNeeded()
+        {
+            if (_editorPeakArrays == null)
+            {
+                _editorPeakArrays = WaveDataHelper.GeneratePeakArrays(AudioData, Channels, 2048);
+                _resolution = (VisibleRightFrame - VisibleLeftFrame + 1) / (AudioData.Length / Channels);
+                return;
+            }
+
+            var visibleLength = (float)(VisibleRightFrame - VisibleLeftFrame + 1);
+            var totalLength = (float)(AudioData.Length / Channels);
+
+            var currentResolution = (float)Math.Round(totalLength / visibleLength);
+
+            if (_resolution == currentResolution) return;
+
+            _resolution = currentResolution;
+            int blockSize = _resolution switch
+            {
+                < 2f => 2048,
+                < 4f => 1024,
+                < 8f => 512,
+                _ => 1
+            };
+
+            // 根据新的 blockSize 重新生成可见区的数据或全量数据
+            _editorPeakArrays = WaveDataHelper.GeneratePeakArrays(AudioData, Channels, blockSize);
         }
 
         private void DrawEditorWave(Microsoft.Graphics.Canvas.CanvasDrawingSession ds,
@@ -484,10 +510,10 @@ namespace DAW.Controls
             if (availableHeight <= 0) return;
 
             float channelHeight = availableHeight / Channels;
-            long visibleLength = VisibleRightSample - VisibleLeftSample + 1;
+            long visibleLength = VisibleRightFrame - VisibleLeftFrame + 1;
             if (visibleLength <= 1) return;
 
-            bool useFill = (visibleLength > 2048 * 100);
+            bool useFill = (_resolution < 8f);
 
             for (int ch = 0; ch < Channels; ch++)
             {
@@ -510,7 +536,7 @@ namespace DAW.Controls
             float channelHeight,
             float offsetY)
         {
-            long visibleLength = VisibleRightSample - VisibleLeftSample + 1;
+            long visibleLength = VisibleRightFrame - VisibleLeftFrame + 1;
             int totalPairs = channelPeaks.Length / 2;
             float samplesPerPixel = (float)visibleLength / canvasWidth;
             float vCenter = offsetY + channelHeight / 2;
@@ -521,7 +547,7 @@ namespace DAW.Controls
 
             for (int x = 0; x < (int)canvasWidth; x++)
             {
-                long sampleIndex = VisibleLeftSample + (long)(x * samplesPerPixel);
+                long sampleIndex = VisibleLeftFrame + (long)(x * samplesPerPixel);
                 long pairIndex = sampleIndex * totalPairs / (AudioData.Length / Channels);
                 pairIndex = Math.Clamp(pairIndex, 0, totalPairs - 1);
 
@@ -559,7 +585,7 @@ namespace DAW.Controls
             float channelHeight,
             float offsetY)
         {
-            long visibleLength = VisibleRightSample - VisibleLeftSample + 1;
+            long visibleLength = VisibleRightFrame - VisibleLeftFrame + 1;
             int totalPairs = channelPeaks.Length / 2;
             float samplesPerPixel = (float)visibleLength / canvasWidth;
             float vCenter = offsetY + channelHeight / 2;
@@ -568,7 +594,7 @@ namespace DAW.Controls
 
             for (int x = 0; x < (int)canvasWidth; x++)
             {
-                long sampleIndex = VisibleLeftSample + (long)(x * samplesPerPixel);
+                long sampleIndex = VisibleLeftFrame + (long)(x * samplesPerPixel);
                 long pairIndex = sampleIndex * totalPairs / (AudioData.Length / Channels);
                 pairIndex = Math.Clamp(pairIndex, 0, totalPairs - 1);
 
@@ -611,7 +637,7 @@ namespace DAW.Controls
             {
                 // 若确定是拖拽，则执行原先的选区逻辑
                 float canvasWidth = (float)EditorCanvasControl.ActualWidth;
-                long visibleLen = VisibleRightSample - VisibleLeftSample + 1;
+                long visibleLen = VisibleRightFrame - VisibleLeftFrame + 1;
                 if (canvasWidth <= 0 || visibleLen <= 0) return;
 
                 var point = e.GetCurrentPoint(EditorCanvasControl);
@@ -620,10 +646,10 @@ namespace DAW.Controls
                 float endX = Math.Max(_editorPointerDownX, x);
 
                 float pxPerSample = canvasWidth / visibleLen;
-                long newStart = (long)(startX / pxPerSample) + VisibleLeftSample;
-                long newEnd = (long)(endX / pxPerSample) + VisibleLeftSample;
-                newStart = Math.Clamp(newStart, VisibleLeftSample, VisibleRightSample);
-                newEnd = Math.Clamp(newEnd, VisibleLeftSample, VisibleRightSample);
+                long newStart = (long)(startX / pxPerSample) + VisibleLeftFrame;
+                long newEnd = (long)(endX / pxPerSample) + VisibleLeftFrame;
+                newStart = Math.Clamp(newStart, VisibleLeftFrame, VisibleRightFrame);
+                newEnd = Math.Clamp(newEnd, VisibleLeftFrame, VisibleRightFrame);
 
                 SelectedLeftSample = newStart;
                 SelectedRightSample = newEnd;
@@ -639,13 +665,13 @@ namespace DAW.Controls
             if (movedDistance <= 5f && AudioData != null && Channels > 0)
             {
                 float canvasWidth = (float)EditorCanvasControl.ActualWidth;
-                long visibleLen = VisibleRightSample - VisibleLeftSample + 1;
+                long visibleLen = VisibleRightFrame - VisibleLeftFrame + 1;
                 if (canvasWidth > 0 && visibleLen > 0)
                 {
                     float x = (float)e.GetCurrentPoint(EditorCanvasControl).Position.X;
                     float pxPerSample = canvasWidth / visibleLen;
-                    long newPosition = (long)(x / pxPerSample) + VisibleLeftSample;
-                    newPosition = Math.Clamp(newPosition, VisibleLeftSample, VisibleRightSample);
+                    long newPosition = (long)(x / pxPerSample) + VisibleLeftFrame;
+                    newPosition = Math.Clamp(newPosition, VisibleLeftFrame, VisibleRightFrame);
 
                     PlaybackPositionSample = newPosition;
                 }

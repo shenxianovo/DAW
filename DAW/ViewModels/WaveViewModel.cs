@@ -83,11 +83,11 @@ public partial class WaveViewModel : ObservableRecipient
 
     private void OnAudioFilePropertyChanged(object sender, PropertyChangedEventArgs e)
     {
-        if (sender is AudioFile file && e.PropertyName == nameof(AudioFile.PlaybackPositionSampleIndex))
+        if (sender is AudioFile file && e.PropertyName == nameof(AudioFile.PlaybackPositionFrameIndex))
         {
-            // 当波形控件通过 TwoWay 绑定修改 PlaybackPositionSampleIndex，
+            // 当波形控件通过 TwoWay 绑定修改 PlaybackPositionFrameIndex，
             // 这里就能监听到，然后通知 waveService 去更新实际播放位置
-            _waveService.SetPlaybackPositionSamples(file.FilePath, file.PlaybackPositionSampleIndex);
+            _waveService.SetPlaybackPositionSamples(file.FilePath, file.PlaybackPositionFrameIndex);
         }
     }
 
@@ -167,7 +167,7 @@ public partial class WaveViewModel : ObservableRecipient
             return;
 
         long index = _waveService.GetPlaybackPositionSamples(CurrentAudioFile.FilePath);
-        CurrentAudioFile.PlaybackPositionSampleIndex = index;
+        CurrentAudioFile.PlaybackPositionFrameIndex = index;
     }
 
     #endregion

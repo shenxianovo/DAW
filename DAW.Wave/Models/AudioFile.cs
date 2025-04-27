@@ -25,15 +25,15 @@ public partial class AudioFile
     #region Editor Info
 
     [ObservableProperty]
-    public partial long VisibleLeftSampleIndex { get; set; }
+    public partial long VisibleLeftFrameIndex { get; set; }
     [ObservableProperty]
-    public partial long VisibleRightSampleIndex { get; set; }
+    public partial long VisibleRightFrameIndex { get; set; }
     [ObservableProperty]
-    public partial long PlaybackPositionSampleIndex { get; set; }
+    public partial long PlaybackPositionFrameIndex { get; set; }
     [ObservableProperty]
-    public partial long SelectedLeftSampleIndex { get; set; }
+    public partial long SelectedLeftFrameIndex { get; set; }
     [ObservableProperty]
-    public partial long SelectedRightSampleIndex { get; set; }
+    public partial long SelectedRightFrameIndex { get; set; }
 
     #endregion
 
