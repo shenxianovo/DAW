@@ -141,7 +141,9 @@ namespace DAW.Controls
             if (d is WaveViewControl control)
             {
                 control._peakArrays = null;
+                control._editorPeakArrays = null;
                 control.PreviewCanvasControl.Invalidate();
+                control.EditorCanvasControl.Invalidate();
             }
         }
 
@@ -150,6 +152,7 @@ namespace DAW.Controls
             if (d is WaveViewControl control)
             {
                 control.PreviewCanvasControl.Invalidate();
+                control.EditorCanvasControl.Invalidate();
             }
         }
 
@@ -238,10 +241,7 @@ namespace DAW.Controls
             // Lazy-load peak arrays
             if (_peakArrays == null)
             {
-                if (AudioData.Length > 2048 * 10)
-                    _peakArrays = WaveDataHelper.GeneratePeakArrays(AudioData, Channels, 2048);
-                else
-                    _peakArrays = WaveDataHelper.GeneratePeakArrays(AudioData, Channels, 1);
+                _peakArrays = WaveDataHelper.GeneratePeakArrays(AudioData, Channels, 512);
             }
 
             WavePreview_DrawWave(sender, args);
@@ -378,6 +378,181 @@ namespace DAW.Controls
 
         #endregion
 
+
+        #endregion
+
+        #region Wave Editor
+        private bool _isSelecting;
+        private float _editorPointerDownX;
+
+        private float[][]? _editorPeakArrays;
+        private void EditorCanvasControl_Draw(CanvasControl sender, CanvasDrawEventArgs args)
+        {
+            if (AudioData == null || AudioData.Length < 1 || Channels < 1) return;
+
+            if (_editorPeakArrays == null)
+            {
+                if (VisibleRightSample - VisibleLeftSample > 2048 * 10)
+                    _editorPeakArrays = WaveDataHelper.GeneratePeakArrays(AudioData, Channels, 2048);
+                else
+                    _editorPeakArrays = WaveDataHelper.GeneratePeakArrays(AudioData, Channels, 1);
+            }
+
+            var ds = args.DrawingSession;
+            float canvasWidth = (float)sender.ActualWidth;
+            float canvasHeight = (float)sender.ActualHeight;
+            if (canvasWidth <= 0 || canvasHeight <= 0) return;
+
+            // 1. 绘制可见范围内的波形子集
+            DrawEditorWave(ds, canvasWidth, canvasHeight);
+
+            // 2. 绘制选中区域
+            float pxPerSample = canvasWidth / (VisibleRightSample - VisibleLeftSample + 1);
+            float sLeftX = (SelectedLeftSample - VisibleLeftSample) * pxPerSample;
+            float sRightX = (SelectedRightSample - VisibleLeftSample) * pxPerSample;
+            if (sRightX < sLeftX) (sLeftX, sRightX) = (sRightX, sLeftX);
+
+            ds.DrawLine(sLeftX, 0, sLeftX, canvasHeight, Colors.Orange);
+            ds.DrawLine(sRightX, 0, sRightX, canvasHeight, Colors.Orange);
+            ds.FillRectangle(sLeftX, 0, sRightX - sLeftX, canvasHeight, Color.FromArgb(100, 255, 165, 0));
+
+            float progressX = (PlaybackPositionSample - VisibleLeftSample) * pxPerSample;
+            ds.DrawLine(progressX, 0, progressX, canvasHeight, Colors.Red);
+        }
+
+        private void DrawEditorWave(Microsoft.Graphics.Canvas.CanvasDrawingSession ds,
+                                    float canvasWidth,
+                                    float canvasHeight)
+        {
+            float spacing = 5f;
+            float totalSpacing = (Channels - 1) * spacing;
+            float availableHeight = canvasHeight - totalSpacing;
+            if (availableHeight <= 0) return;
+
+            float channelHeight = availableHeight / Channels;
+            long visibleLength = VisibleRightSample - VisibleLeftSample + 1;
+            if (visibleLength <= 1) return;
+
+            for (int ch = 0; ch < Channels; ch++)
+            {
+                float[] peaks = _editorPeakArrays[ch];
+                if (peaks.Length < 2) continue;
+
+                float offsetY = ch * (channelHeight + spacing);
+                var pathBuilder = new CanvasPathBuilder(ds);
+                var topPoints = new List<Vector2>();
+                var bottomPoints = new List<Vector2>();
+
+                // 这里的 totalPairs 指的是峰值的数目对(每帧2个float: min和max)
+                int totalPairs = peaks.Length / 2;
+                // 编辑视图扫描的峰值区间
+                // 对照 Preview 中的做法，可做更准确的采样对应。
+                // 这里简单做：可见范围对应 totalPairs, 逐像素绘制
+                float samplesPerPixel = (float)visibleLength / canvasWidth;
+
+                for (int x = 0; x < (int)canvasWidth; x++)
+                {
+                    // 当前画布 x 对应的波形采样索引
+                    long sampleIndex = VisibleLeftSample + (long)(x * samplesPerPixel);
+                    // 将 sampleIndex 映射到 peaks 的区间
+                    long pairIndex = sampleIndex * totalPairs / (AudioData.Length / Channels);
+                    pairIndex = Math.Clamp(pairIndex, 0, totalPairs - 1);
+
+                    float localMin = peaks[pairIndex * 2];
+                    float localMax = peaks[pairIndex * 2 + 1];
+                    float vCenter = offsetY + channelHeight / 2;
+                    float yMin = vCenter - localMin * (channelHeight / 2);
+                    float yMax = vCenter - localMax * (channelHeight / 2);
+                    topPoints.Add(new Vector2(x, yMax));
+                    bottomPoints.Add(new Vector2(x, yMin));
+                }
+
+                if (topPoints.Count > 0)
+                {
+                    pathBuilder.BeginFigure(topPoints[0]);
+                    for (int i = 1; i < topPoints.Count; i++)
+                    {
+                        pathBuilder.AddLine(topPoints[i]);
+                    }
+                    for (int i = bottomPoints.Count - 1; i >= 0; i--)
+                    {
+                        pathBuilder.AddLine(bottomPoints[i]);
+                    }
+                    pathBuilder.EndFigure(CanvasFigureLoop.Closed);
+                }
+
+                using var geometry = CanvasGeometry.CreatePath(pathBuilder);
+                ds.FillGeometry(geometry, Colors.MediumAquamarine);
+            }
+        }
+
+        #region Wave Editor Events
+
+        private void OnEditorCanvasPointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            if (AudioData == null || AudioData.Length < 1 || Channels < 1) return;
+
+            var point = e.GetCurrentPoint(EditorCanvasControl);
+
+            _isSelecting = true;
+            _editorPointerDownX = (float)point.Position.X;
+        }
+
+        private void OnEditorCanvasPointerMoved(object sender, PointerRoutedEventArgs e)
+        {
+            // 若不移动超过一定像素，就视为单击而非拖拽
+            if (!_isSelecting || AudioData == null) return;
+
+            float movedDistance = Math.Abs((float)e.GetCurrentPoint(EditorCanvasControl).Position.X - _editorPointerDownX);
+            if (movedDistance > 5f) // 超过5像素才算拖拽
+            {
+                // 若确定是拖拽，则执行原先的选区逻辑
+                float canvasWidth = (float)EditorCanvasControl.ActualWidth;
+                long visibleLen = VisibleRightSample - VisibleLeftSample + 1;
+                if (canvasWidth <= 0 || visibleLen <= 0) return;
+
+                var point = e.GetCurrentPoint(EditorCanvasControl);
+                float x = (float)point.Position.X;
+                float startX = Math.Min(_editorPointerDownX, x);
+                float endX = Math.Max(_editorPointerDownX, x);
+
+                float pxPerSample = canvasWidth / visibleLen;
+                long newStart = (long)(startX / pxPerSample) + VisibleLeftSample;
+                long newEnd = (long)(endX / pxPerSample) + VisibleLeftSample;
+                newStart = Math.Clamp(newStart, VisibleLeftSample, VisibleRightSample);
+                newEnd = Math.Clamp(newEnd, VisibleLeftSample, VisibleRightSample);
+
+                SelectedLeftSample = newStart;
+                SelectedRightSample = newEnd;
+
+                EditorCanvasControl.Invalidate();
+            }
+        }
+
+        private void OnEditorCanvasPointerReleased(object sender, PointerRoutedEventArgs e)
+        {
+            // 如果鼠标没有明显拖拽，则当作单击，更新播放位置
+            float movedDistance = Math.Abs((float)e.GetCurrentPoint(EditorCanvasControl).Position.X - _editorPointerDownX);
+            if (movedDistance <= 5f && AudioData != null && Channels > 0)
+            {
+                float canvasWidth = (float)EditorCanvasControl.ActualWidth;
+                long visibleLen = VisibleRightSample - VisibleLeftSample + 1;
+                if (canvasWidth > 0 && visibleLen > 0)
+                {
+                    float x = (float)e.GetCurrentPoint(EditorCanvasControl).Position.X;
+                    float pxPerSample = canvasWidth / visibleLen;
+                    long newPosition = (long)(x / pxPerSample) + VisibleLeftSample;
+                    newPosition = Math.Clamp(newPosition, VisibleLeftSample, VisibleRightSample);
+
+                    PlaybackPositionSample = newPosition;
+                }
+            }
+
+            _isSelecting = false;
+        }
+
+
+        #endregion
 
         #endregion
 

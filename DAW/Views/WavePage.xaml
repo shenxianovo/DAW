@@ -96,7 +96,7 @@
                                       Channels="{x:Bind ViewModel.CurrentAudioFile.Channels, Mode=OneWay}"
                                       VisibleLeftSample="{x:Bind ViewModel.CurrentAudioFile.VisibleLeftSampleIndex, Mode=TwoWay}"
                                       VisibleRightSample="{x:Bind ViewModel.CurrentAudioFile.VisibleRightSampleIndex, Mode=TwoWay}"
-                                      PlaybackPositionSample="{x:Bind ViewModel.CurrentAudioFile.PlaybackPositionSampleIndex, Mode=OneWay}"
+                                      PlaybackPositionSample="{x:Bind ViewModel.CurrentAudioFile.PlaybackPositionSampleIndex, Mode=TwoWay}"
                                       HorizontalAlignment="Stretch"/>
 
 

@@ -17,4 +17,5 @@ public interface IWaveService
     public void Pause(string filePath);
 
     public long GetPlaybackPositionSamples(string filePath);
+    public void SetPlaybackPositionSamples(string filePath, long sampleIndex);
 }

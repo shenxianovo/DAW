@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,10 +30,7 @@ public partial class WaveViewModel : ObservableRecipient
     // 定时器，用于刷新播放进度
     private readonly DispatcherTimer _timer;
 
-
     #endregion
-
-
 
     #region Observable Properties
     public ObservableCollection<AudioFile> AudioList { get; } = [];
@@ -60,10 +58,41 @@ public partial class WaveViewModel : ObservableRecipient
         _waveService = waveService;
         _audioDevice = audioDevice;
 
-        _timer = new DispatcherTimer();
-        _timer.Interval = TimeSpan.FromMilliseconds(50);
+        _timer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(50)
+        };
         _timer.Tick += (s, e) => UpdatePlaybackPosition();
     }
+
+    #region Events
+
+    partial void OnSelectedAudioIndexChanged(int oldValue, int newValue)
+    {
+        // 切换选中的 AudioFile 时，先移除原来的事件，再订阅新的事件
+        if (oldValue >= 0 && oldValue < AudioList.Count)
+        {
+            AudioList[oldValue].PropertyChanged -= OnAudioFilePropertyChanged;
+        }
+
+        if (newValue >= 0 && newValue < AudioList.Count)
+        {
+            AudioList[newValue].PropertyChanged += OnAudioFilePropertyChanged;
+        }
+    }
+
+    private void OnAudioFilePropertyChanged(object sender, PropertyChangedEventArgs e)
+    {
+        if (sender is AudioFile file && e.PropertyName == nameof(AudioFile.PlaybackPositionSampleIndex))
+        {
+            // 当波形控件通过 TwoWay 绑定修改 PlaybackPositionSampleIndex，
+            // 这里就能监听到，然后通知 waveService 去更新实际播放位置
+            _waveService.SetPlaybackPositionSamples(file.FilePath, file.PlaybackPositionSampleIndex);
+        }
+    }
+
+    #endregion
+
 
     #region Relay Commands
 

@@ -20,13 +20,20 @@
         <xaml:CanvasControl Grid.Row="0"
                             Height="40"
                             x:Name="PreviewCanvasControl"
+                            ClearColor="{StaticResource CanvasClearColor}"
                             Draw="CanvasControl_Draw"
                             PointerPressed="OnCanvasPointerPressed"
                             PointerMoved="OnCanvasPointerMoved"
-                            PointerReleased="OnCanvasPointerReleased"
-                            ClearColor="{StaticResource CanvasClearColor}"/>
+                            PointerReleased="OnCanvasPointerReleased"/>
 
-        <Rectangle Grid.Row="1" Fill="SkyBlue"/>
+        <xaml:CanvasControl Grid.Row="1"
+                            x:Name="EditorCanvasControl"
+                            ClearColor="{StaticResource CanvasClearColor}"
+                            Draw="EditorCanvasControl_Draw"
+                            PointerPressed="OnEditorCanvasPointerPressed"
+                            PointerMoved="OnEditorCanvasPointerMoved"
+                            PointerReleased="OnEditorCanvasPointerReleased"/>
+
         <Rectangle Grid.Row="2" Fill="Azure"/>
     </Grid>
 </UserControl>

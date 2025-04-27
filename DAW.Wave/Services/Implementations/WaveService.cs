@@ -115,6 +115,22 @@ public class WaveService : IWaveService
         return 0;
     }
 
+    public void SetPlaybackPositionSamples(string filePath, long sampleIndex)
+    {
+        if (_playerMap.TryGetValue(filePath, out var pair))
+        {
+            var reader = pair.reader;
+            int blockAlign = reader.WaveFormat.BlockAlign;
+            if (blockAlign > 0)
+            {
+                long newBytePos = sampleIndex * blockAlign;
+                // 确保不超出文件长度
+                newBytePos = Math.Clamp(newBytePos, 0, reader.Length);
+                reader.Position = newBytePos;
+            }
+        }
+    }
+
 
     private async Task<string> ConvertToPcm32(string sourcePath)
     {
