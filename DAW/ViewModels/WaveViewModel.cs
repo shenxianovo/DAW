@@ -87,12 +87,11 @@ public partial class WaveViewModel : ObservableRecipient
         {
             // 当波形控件通过 TwoWay 绑定修改 PlaybackPositionFrameIndex，
             // 这里就能监听到，然后通知 waveService 去更新实际播放位置
-            _waveService.SetPlaybackPositionSamples(file.FilePath, file.PlaybackPositionFrameIndex);
+            _waveService.SetPlaybackPositionFrame(file, file.PlaybackPositionFrameIndex);
         }
     }
 
     #endregion
-
 
     #region Relay Commands
 
@@ -125,36 +124,32 @@ public partial class WaveViewModel : ObservableRecipient
     [RelayCommand]
     private void Play()
     {
-        if (AudioList.Count > 0 && SelectedAudioIndex >= 0)
-        {
-            _waveService.Play(AudioList[SelectedAudioIndex].FilePath);
-            _isPlaying = true;
-            _timer.Start();
-        }
+        _waveService.Play(CurrentAudioFile);
+        _isPlaying = true;
+        _timer.Start();
     }
 
     [RelayCommand]
     private void Pause()
     {
-        if (AudioList.Count > 0 && SelectedAudioIndex >= 0)
-        {
-            _waveService.Pause(AudioList[SelectedAudioIndex].FilePath);
-            _isPlaying = false;
-            _timer.Stop();
-        }
+        _waveService.Pause(CurrentAudioFile);
+        _isPlaying = false;
+        _timer.Stop();
     }
 
     [RelayCommand]
     private void Close()
     {
-        if (AudioList.Count > 0 && SelectedAudioIndex >= 0)
-        {
-            var currentFile = AudioList[SelectedAudioIndex];
-            _waveService.Close(currentFile.FilePath);
-            AudioList.Remove(currentFile);
-            _isPlaying = false;
-            _timer.Stop();
-        }
+        _waveService.Close(CurrentAudioFile);
+        AudioList.Remove(CurrentAudioFile);
+        _isPlaying = false;
+        _timer.Stop();
+    }
+
+    [RelayCommand]
+    private void ApplyEffect()
+    {
+        _waveService.AddEffect(CurrentAudioFile, "volume");
     }
 
     #endregion
@@ -166,7 +161,7 @@ public partial class WaveViewModel : ObservableRecipient
         if (!_isPlaying || SelectedAudioIndex < 0 || SelectedAudioIndex >= AudioList.Count)
             return;
 
-        long index = _waveService.GetPlaybackPositionSamples(CurrentAudioFile.FilePath);
+        long index = _waveService.GetPlaybackPositionFrame(CurrentAudioFile);
         CurrentAudioFile.PlaybackPositionFrameIndex = index;
     }
 

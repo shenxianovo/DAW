@@ -18,6 +18,7 @@ using Windows.Foundation.Collections;
 using DAW.ViewModels;
 using DAW.Views;
 using DAW.Wave.Services;
+using DAW.Wave.Services.Effects;
 using DAW.Wave.Services.Implementations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -49,15 +50,16 @@ namespace DAW
                 ConfigureServices((content, services) =>
                 {
                     // Services
-                    services.AddTransient<IAudioDevice, AudioDevice>();
-                    services.AddTransient<IWaveService, WaveService>();
+                    services.AddSingleton<IAudioDevice, AudioDevice>();
+                    services.AddSingleton<IWaveService, WaveService>();
+                    services.AddSingleton<AudioEffectFactory>();
 
                     // ViewModels and Views
-                    services.AddTransient<ShellPage>();
-                    services.AddTransient<SettingsViewModel>();
-                    services.AddTransient<SettingsPage>();
+                    services.AddSingleton<ShellPage>();
+                    services.AddSingleton<SettingsViewModel>();
+                    services.AddSingleton<SettingsPage>();
                     services.AddSingleton<WaveViewModel>();
-                    services.AddTransient<WavePage>();
+                    services.AddSingleton<WavePage>();
                 }).
                 Build();
         }

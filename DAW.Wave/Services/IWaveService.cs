@@ -12,10 +12,12 @@ public interface IWaveService
     public Task<AudioFile> OpenAsync(string filePath);
 
     public Task<float[]> LoadWaveAsync(string filePath);
-    public void Close(string filePath);
-    public void Play(string filePath);
-    public void Pause(string filePath);
+    public void Close(AudioFile audioFile);
+    public void Play(AudioFile audioFile);
+    public void Pause(AudioFile audioFile);
 
-    public long GetPlaybackPositionSamples(string filePath);
-    public void SetPlaybackPositionSamples(string filePath, long sampleIndex);
+    public long GetPlaybackPositionFrame(AudioFile audioFile);
+    public void SetPlaybackPositionFrame(AudioFile audioFile, long frameIndex);
+
+    public void AddEffect(AudioFile audioFile, string effectName);
 }

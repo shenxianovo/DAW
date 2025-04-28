@@ -6,18 +6,27 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DAW.Wave.Models;
+using DAW.Wave.Services.Effects;
 
 namespace DAW.Wave.Services.Implementations;
 
 public class WaveService : IWaveService
 {
     private readonly IAudioDevice _audioDevice;
+
+    private readonly AudioEffectFactory _audioEffectFactory;
+
     // 存储 (reader, waveOut) 对，便于获取播放位置
-    private readonly ConcurrentDictionary<string, (AudioFileReader reader, WaveOutEvent waveOut)> _playerMap =
+    private readonly ConcurrentDictionary<AudioFile, (AudioFileReader reader, WaveOutEvent waveOut)> _playerMap =
         new();
-    public WaveService(IAudioDevice audioDevice)
+    // 新增一张表，用于存储音频对应的 RealtimeEffectSampleProvider
+    private readonly ConcurrentDictionary<AudioFile, RealtimeEffectSampleProvider> _realtimeProviders
+        = new();
+
+    public WaveService(IAudioDevice audioDevice, AudioEffectFactory audioEffectFactory)
     {
         _audioDevice = audioDevice;
+        _audioEffectFactory = audioEffectFactory;
     }
 
     public async Task<AudioFile> OpenAsync(string filePath)
@@ -26,33 +35,37 @@ public class WaveService : IWaveService
         var cachedPath = await ConvertToPcm32(filePath);
 
         // 读取元数据信息并创建WaveOutEvent
-        var reader = new AudioFileReader(cachedPath);
-        var audioFile = new AudioFile
+        var convertedAudioReader = new AudioFileReader(cachedPath);
+        var convertedAudioFile = new AudioFile
         {
             FilePath = cachedPath,
             FileName = System.IO.Path.GetFileName(filePath),
-            Duration = reader.TotalTime,
-            SampleRate = reader.WaveFormat.SampleRate,
-            Channels = reader.WaveFormat.Channels,
-            BitDepth = reader.WaveFormat.BitsPerSample,
+            Duration = convertedAudioReader.TotalTime,
+            SampleRate = convertedAudioReader.WaveFormat.SampleRate,
+            Channels = convertedAudioReader.WaveFormat.Channels,
+            BitDepth = convertedAudioReader.WaveFormat.BitsPerSample,
             Format = "PCM 32-bit",
         };
 
         // 加载完整音频数据
-        audioFile.AudioData = await LoadWaveAsync(cachedPath);
-        long totalFrames = audioFile.AudioData.Length / audioFile.Channels;
-        audioFile.VisibleLeftFrameIndex = 0;
-        audioFile.VisibleRightFrameIndex = totalFrames - 1;
+        convertedAudioFile.AudioData = await LoadWaveAsync(cachedPath);
+        long totalFrames = convertedAudioFile.AudioData.Length / convertedAudioFile.Channels;
+        convertedAudioFile.VisibleLeftFrameIndex = 0;
+        convertedAudioFile.VisibleRightFrameIndex = totalFrames - 1;
 
         var waveOut = new WaveOutEvent
         {
             DeviceNumber = _audioDevice.GetCurrentOutputDeviceId()
         };
-        waveOut.Init(reader);
 
-        // 存起来方便后面查进度
-        _playerMap[cachedPath] = (reader, waveOut);
-        return audioFile;
+        var realTimeProvider = new RealtimeEffectSampleProvider(convertedAudioReader, convertedAudioFile.AudioEffects);
+
+        waveOut.Init(realTimeProvider);
+
+        _playerMap[convertedAudioFile] = (convertedAudioReader, waveOut);
+        _realtimeProviders[convertedAudioFile] = realTimeProvider;
+
+        return convertedAudioFile;
     }
 
     public async Task<float[]> LoadWaveAsync(string filePath)
@@ -72,25 +85,25 @@ public class WaveService : IWaveService
         });
     }
 
-    public void Play(string filePath)
+    public void Play(AudioFile audioFile)
     {
-        if (_playerMap.TryGetValue(filePath, out var pair))
+        if (_playerMap.TryGetValue(audioFile, out var pair))
         {
             pair.waveOut.Play();
         }
     }
 
-    public void Pause(string filePath)
+    public void Pause(AudioFile audioFile)
     {
-        if (_playerMap.TryGetValue(filePath, out var pair))
+        if (_playerMap.TryGetValue(audioFile, out var pair))
         {
             pair.waveOut.Stop();
         }
     }
 
-    public void Close(string filePath)
+    public void Close(AudioFile audioFile)
     {
-        if (_playerMap.TryRemove(filePath, out var pair))
+        if (_playerMap.TryRemove(audioFile, out var pair))
         {
             pair.waveOut.Stop();
             pair.waveOut.Dispose();
@@ -98,9 +111,9 @@ public class WaveService : IWaveService
         }
     }
 
-    public long GetPlaybackPositionSamples(string filePath)
+    public long GetPlaybackPositionFrame(AudioFile audioFile)
     {
-        if (_playerMap.TryGetValue(filePath, out var pair))
+        if (_playerMap.TryGetValue(audioFile, out var pair))
         {
             var reader = pair.reader;
             // 每一帧字节数 = WaveFormat.BlockAlign
@@ -114,15 +127,15 @@ public class WaveService : IWaveService
         return 0;
     }
 
-    public void SetPlaybackPositionSamples(string filePath, long sampleIndex)
+    public void SetPlaybackPositionFrame(AudioFile audioFile, long frameIndex)
     {
-        if (_playerMap.TryGetValue(filePath, out var pair))
+        if (_playerMap.TryGetValue(audioFile, out var pair))
         {
             var reader = pair.reader;
             int blockAlign = reader.WaveFormat.BlockAlign;
             if (blockAlign > 0)
             {
-                long newBytePos = sampleIndex * blockAlign;
+                long newBytePos = frameIndex * blockAlign;
                 // 确保不超出文件长度
                 newBytePos = Math.Clamp(newBytePos, 0, reader.Length);
                 reader.Position = newBytePos;
@@ -130,6 +143,19 @@ public class WaveService : IWaveService
         }
     }
 
+    public void AddEffect(AudioFile audioFile, string effectName)
+    {
+        var effect = _audioEffectFactory.CreateEffect(effectName);
+        if (effect == null) return;
+
+        audioFile.AudioEffects.Add(effect);
+
+        // 若该 AudioFile 正在播放，直接更新实时效果链
+        if (_realtimeProviders.TryGetValue(audioFile, out var rp))
+        {
+            rp.UpdateEffects(audioFile.AudioEffects);
+        }
+    }
 
     private async Task<string> ConvertToPcm32(string sourcePath)
     {

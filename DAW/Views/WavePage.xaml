@@ -78,7 +78,16 @@
                                    TextWrapping="Wrap"/>
                     </TabViewItem>
                     <TabViewItem Header="效果" IsClosable="False">
-                        <TextBlock Padding="10" Text="效果设置" FontWeight="Bold"/>
+                        <StackPanel>
+
+                            <TextBlock Padding="10" Text="效果设置" FontWeight="Bold"/>
+                            <ListView ItemsSource="{x:Bind ViewModel.CurrentAudioFile.AudioEffects, Mode=OneWay}"
+                                  HorizontalAlignment="Stretch"
+                                  VerticalAlignment="Stretch"
+                                  Padding="4">
+                                <TextBlock Text="{x:Bind Mode=OneWay}"/>
+                            </ListView>
+                        </StackPanel>
                     </TabViewItem>
                 </TabView>
             </Border>
@@ -112,6 +121,8 @@
                 <Button Command="{x:Bind ViewModel.CloseCommand}">
                     <FontIcon Glyph="&#xE894;"/>
                 </Button>
+                <Button Content="添加效果" Command="{x:Bind ViewModel.ApplyEffectCommand}"/>
+                <!-- 调试信息 -->
                 <StackPanel>
                     <TextBlock Text="VisibleLeftFrameIndex"/>
                     <TextBlock Text="{x:Bind ViewModel.CurrentAudioFile.VisibleLeftFrameIndex, Mode=OneWay}"/>

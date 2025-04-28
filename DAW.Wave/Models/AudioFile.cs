@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using DAW.Wave.Services;
 
 namespace DAW.Wave.Models;
 
@@ -34,6 +36,8 @@ public partial class AudioFile
     public partial long SelectedLeftFrameIndex { get; set; }
     [ObservableProperty]
     public partial long SelectedRightFrameIndex { get; set; }
+
+    public ObservableCollection<IAudioEffect> AudioEffects { get; set; } = [];
 
     #endregion
 
