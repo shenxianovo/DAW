@@ -10,6 +10,7 @@
     xmlns:models="using:DAW.Wave.Models"
     xmlns:controls="using:DAW.Controls"
     xmlns:winUi="using:CommunityToolkit.WinUI"
+    xmlns:services="using:DAW.Wave.Services"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     KeyboardAcceleratorPlacementMode="Hidden"
@@ -79,13 +80,20 @@
                     </TabViewItem>
                     <TabViewItem Header="效果" IsClosable="False">
                         <StackPanel>
-
                             <TextBlock Padding="10" Text="效果设置" FontWeight="Bold"/>
+                            <Button Content="添加效果" Command="{x:Bind ViewModel.ApplyEffectCommand}"/>
                             <ListView ItemsSource="{x:Bind ViewModel.CurrentAudioFile.AudioEffects, Mode=OneWay}"
                                   HorizontalAlignment="Stretch"
                                   VerticalAlignment="Stretch"
                                   Padding="4">
-                                <TextBlock Text="{x:Bind Mode=OneWay}"/>
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="services:IAudioEffect">
+                                        <StackPanel Orientation="Horizontal"
+                                                    DoubleTapped="OnEffectItemDoubleTapped">
+                                            <TextBlock Text="{x:Bind Name}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
                             </ListView>
                         </StackPanel>
                     </TabViewItem>
@@ -121,7 +129,6 @@
                 <Button Command="{x:Bind ViewModel.CloseCommand}">
                     <FontIcon Glyph="&#xE894;"/>
                 </Button>
-                <Button Content="添加效果" Command="{x:Bind ViewModel.ApplyEffectCommand}"/>
                 <!-- 调试信息 -->
                 <StackPanel>
                     <TextBlock Text="VisibleLeftFrameIndex"/>

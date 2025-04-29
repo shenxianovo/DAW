@@ -16,7 +16,9 @@ using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using DAW.ViewModels;
+using DAW.ViewModels.Effects;
 using DAW.Views;
+using DAW.Views.Effects;
 using DAW.Wave.Services;
 using DAW.Wave.Services.Effects;
 using DAW.Wave.Services.Implementations;
@@ -60,6 +62,9 @@ namespace DAW
                     services.AddSingleton<SettingsPage>();
                     services.AddSingleton<WaveViewModel>();
                     services.AddSingleton<WavePage>();
+
+                    services.AddSingleton<VolumeEffectDialog>();
+                    services.AddSingleton<VolumeEffectViewModel>();
                 }).
                 Build();
         }

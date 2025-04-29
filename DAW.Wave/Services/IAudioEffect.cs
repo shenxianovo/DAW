@@ -11,5 +11,7 @@ public interface IAudioEffect
 {
     public bool Enabled { get; set; } 
 
+    public string Name { get; set; }
+
     void ProcessSamples(float[] buffer, int offset, int count);
 }

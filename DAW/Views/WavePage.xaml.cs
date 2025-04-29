@@ -13,6 +13,10 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using DAW.ViewModels;
+using DAW.ViewModels.Effects;
+using DAW.Views.Effects;
+using System.Drawing.Imaging.Effects;
+using DAW.Wave.Services;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -25,9 +29,24 @@ namespace DAW.Views
     public sealed partial class WavePage : Page
     {
         public WaveViewModel ViewModel { get; set; } = App.GetService<WaveViewModel>();
+
         public WavePage()
         {
             this.InitializeComponent();
+        }
+
+        private async void OnEffectItemDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        {
+            // sender 是根 StackPanel，DataContext 即为此项绑定的 IAudioEffect
+            if (sender is FrameworkElement fe && fe.DataContext is IAudioEffect effect)
+            {
+                if (effect.Name == "Volume")
+                {
+                    var dialog = new VolumeEffectDialog(new VolumeEffectViewModel(effect))
+                        {XamlRoot = App.MainWindow.Content.XamlRoot };
+                    await dialog.ShowAsync();
+                }
+            }
         }
     }
 }

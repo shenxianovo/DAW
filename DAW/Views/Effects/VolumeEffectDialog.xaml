@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="DAW.Views.Effects.VolumeEffectDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:DAW.Views.Effects"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="编辑效果"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <StackPanel Spacing="16">
+        <TextBlock Text="音量调节" />
+        <Slider Minimum="0" Maximum="10" StepFrequency="0.05"
+                Value="{x:Bind ViewModel.Volume, Mode=TwoWay}"/>
+
+    </StackPanel>
+</ContentDialog>
