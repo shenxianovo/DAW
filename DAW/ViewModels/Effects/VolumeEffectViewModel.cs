@@ -9,17 +9,13 @@ using DAW.Wave.Services.Effects;
 
 namespace DAW.ViewModels.Effects;
 
-public partial class VolumeEffectViewModel : ObservableRecipient
+public class VolumeEffectViewModel : ObservableRecipient
 {
     private readonly VolumeEffect _volumeEffect;
 
     public float Volume
     {
-        get
-        {
-            field = _volumeEffect.Volume;
-            return field;
-        }
+        get => _volumeEffect.Volume;
         set
         {
             _volumeEffect.Volume = value;

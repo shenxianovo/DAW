@@ -11,7 +11,8 @@ public class AudioEffectFactory
     private readonly Dictionary<string, Func<IAudioEffect>> _effectCreators =
         new()
         {
-            { "volume", () => new VolumeEffect() }
+            { "volume", () => new VolumeEffect() },
+            { "distortion", () => new DistortionEffect()}
             //{ "echo", () => new EchoEffect() },
             //{ "reverb", () => new ReverbEffect() }
         };

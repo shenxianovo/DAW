@@ -67,6 +67,7 @@
                 </TabView>
             </Border>
 
+            <!-- Editor info list -->
             <Border Grid.Row="1"
                     BorderThickness="2" BorderBrush="Gray" CornerRadius="10"
                     Margin="0, 2, 2, 0">
@@ -101,6 +102,21 @@
             </Border>
         </Grid>
 
+        <!--
+        <Popup x:Name="MyPopup"
+               IsLightDismissEnabled="True"
+               HorizontalOffset="200"
+               VerticalOffset="100">
+            <Border Background="White" BorderBrush="Gray" BorderThickness="1" Padding="10">
+                <StackPanel>
+                    <TextBlock Text="qweqwe"/>
+                    <Slider/>
+                </StackPanel>
+            </Border>
+        </Popup>
+        -->
+
+        <!-- Waveform viewer -->
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
@@ -145,5 +161,6 @@
             </StackPanel>
         </Grid>
 
+        
     </Grid>
 </Page>

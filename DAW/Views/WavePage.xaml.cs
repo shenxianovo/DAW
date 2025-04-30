@@ -35,17 +35,11 @@ namespace DAW.Views
             this.InitializeComponent();
         }
 
-        private async void OnEffectItemDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        private void OnEffectItemDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
-            // sender 是根 StackPanel，DataContext 即为此项绑定的 IAudioEffect
             if (sender is FrameworkElement fe && fe.DataContext is IAudioEffect effect)
             {
-                if (effect.Name == "Volume")
-                {
-                    var dialog = new VolumeEffectDialog(new VolumeEffectViewModel(effect))
-                        {XamlRoot = App.MainWindow.Content.XamlRoot };
-                    await dialog.ShowAsync();
-                }
+                var window = new EffectWindow(effect);
             }
         }
     }

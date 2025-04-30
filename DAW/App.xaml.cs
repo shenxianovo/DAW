@@ -62,9 +62,6 @@ namespace DAW
                     services.AddSingleton<SettingsPage>();
                     services.AddSingleton<WaveViewModel>();
                     services.AddSingleton<WavePage>();
-
-                    services.AddSingleton<VolumeEffectDialog>();
-                    services.AddSingleton<VolumeEffectViewModel>();
                 }).
                 Build();
         }
