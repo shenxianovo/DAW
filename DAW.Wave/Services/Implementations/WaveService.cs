@@ -145,12 +145,28 @@ public class WaveService : IWaveService
 
     public void AddEffect(AudioFile audioFile, string effectName)
     {
-        var effect = _audioEffectFactory.CreateEffect(effectName);
+        var effect = _audioEffectFactory.CreateEffect(effectName, audioFile.SampleRate);
         if (effect == null) return;
 
         audioFile.AudioEffects.Add(effect);
 
         // 若该 AudioFile 正在播放，直接更新实时效果链
+        if (_realtimeProviders.TryGetValue(audioFile, out var rp))
+        {
+            rp.UpdateEffects(audioFile.AudioEffects);
+        }
+    }
+
+    public void RemoveEffect(AudioFile audioFile, string effectName)
+    {
+        // 查找要移除的效果
+        var effectToRemove = audioFile.AudioEffects.FirstOrDefault(e => e.Name.Equals(effectName, StringComparison.OrdinalIgnoreCase));
+        if (effectToRemove == null) return; // 如果没有找到对应效果，直接返回
+
+        // 从效果列表中移除
+        audioFile.AudioEffects.Remove(effectToRemove);
+
+        // 如果该音频文件正在播放，更新实时效果链
         if (_realtimeProviders.TryGetValue(audioFile, out var rp))
         {
             rp.UpdateEffects(audioFile.AudioEffects);

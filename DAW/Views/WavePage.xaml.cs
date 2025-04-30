@@ -42,5 +42,13 @@ namespace DAW.Views
                 var window = new EffectWindow(effect);
             }
         }
+
+        private void RemoveEffect(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement fe && fe.DataContext is IAudioEffect effect)
+            {
+                ViewModel.RevomeEffect(effect);
+            }
+        }
     }
 }

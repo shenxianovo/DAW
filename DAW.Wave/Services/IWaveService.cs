@@ -20,4 +20,5 @@ public interface IWaveService
     public void SetPlaybackPositionFrame(AudioFile audioFile, long frameIndex);
 
     public void AddEffect(AudioFile audioFile, string effectName);
+    public void RemoveEffect(AudioFile audioFile, string effectName);
 }

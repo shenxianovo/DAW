@@ -19,6 +19,7 @@ public class EffectUiFactory
         {
             VolumeEffect => new VolumeEffectPage(new VolumeEffectViewModel(effect)),
             DistortionEffect => new DistortionEffectPage(new DistortionEffectViewModel(effect)),
+            GraphicEQEffect => new GraphicEQEffectPage(new GraphicEQEffectViewModel(effect)),
             _ => throw new NotSupportedException($"Unsupported effect type: {effect.GetType().Name}")
         };
     }

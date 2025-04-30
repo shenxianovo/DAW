@@ -8,19 +8,14 @@ namespace DAW.Wave.Services.Effects;
 
 public class AudioEffectFactory
 {
-    private readonly Dictionary<string, Func<IAudioEffect>> _effectCreators =
-        new()
-        {
-            { "volume", () => new VolumeEffect() },
-            { "distortion", () => new DistortionEffect()}
-            //{ "echo", () => new EchoEffect() },
-            //{ "reverb", () => new ReverbEffect() }
-        };
-
-    public IAudioEffect CreateEffect(string effectName)
+    public IAudioEffect CreateEffect(string name, int sampleRate)
     {
-        return _effectCreators.TryGetValue(effectName, out var creator)
-            ? creator()
-            : null;
+        return name switch
+        {
+            "Volume" => new VolumeEffect(),
+            "Distortion" => new DistortionEffect(),
+            "GraphicEQ" => new GraphicEQEffect(sampleRate),
+            _ => null
+        };
     }
 }

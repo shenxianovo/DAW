@@ -3,13 +3,11 @@
     x:Class="DAW.Views.WavePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:DAW.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     xmlns:models="using:DAW.Wave.Models"
     xmlns:controls="using:DAW.Controls"
-    xmlns:winUi="using:CommunityToolkit.WinUI"
     xmlns:services="using:DAW.Wave.Services"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
@@ -82,7 +80,15 @@
                     <TabViewItem Header="效果" IsClosable="False">
                         <StackPanel>
                             <TextBlock Padding="10" Text="效果设置" FontWeight="Bold"/>
-                            <Button Content="添加效果" Command="{x:Bind ViewModel.ApplyEffectCommand}"/>
+                            <DropDownButton Content="添加效果">
+                                <DropDownButton.Flyout>
+                                    <MenuFlyout>
+                                        <MenuFlyoutItem Text="Volume" Command="{x:Bind ViewModel.AddEffectCommand}" CommandParameter="Volume"/>
+                                        <MenuFlyoutItem Text="Distortion" Command="{x:Bind ViewModel.AddEffectCommand}" CommandParameter="Distortion"/>
+                                        <MenuFlyoutItem Text="GraphicEQ" Command="{x:Bind ViewModel.AddEffectCommand}" CommandParameter="GraphicEQ"/>
+                                    </MenuFlyout>
+                                </DropDownButton.Flyout>
+                            </DropDownButton>
                             <ListView ItemsSource="{x:Bind ViewModel.CurrentAudioFile.AudioEffects, Mode=OneWay}"
                                   HorizontalAlignment="Stretch"
                                   VerticalAlignment="Stretch"
@@ -91,7 +97,14 @@
                                     <DataTemplate x:DataType="services:IAudioEffect">
                                         <StackPanel Orientation="Horizontal"
                                                     DoubleTapped="OnEffectItemDoubleTapped">
-                                            <TextBlock Text="{x:Bind Name}"/>
+                                            <StackPanel.ContextFlyout>
+                                                <MenuFlyout>
+                                                    <MenuFlyoutItem Text="Delete" Click="RemoveEffect">
+                                                    </MenuFlyoutItem>
+                                                </MenuFlyout>
+                                            </StackPanel.ContextFlyout>
+                                            
+                                            <TextBlock Text="{x:Bind Name}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                                         </StackPanel>
                                     </DataTemplate>
                                 </ListView.ItemTemplate>

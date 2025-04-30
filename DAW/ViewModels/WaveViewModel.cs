@@ -147,9 +147,14 @@ public partial class WaveViewModel : ObservableRecipient
     }
 
     [RelayCommand]
-    private void ApplyEffect()
+    private void AddEffect(string effectName)
     {
-        _waveService.AddEffect(CurrentAudioFile, "volume");
+        _waveService.AddEffect(CurrentAudioFile, effectName);
+    }
+
+    public void RevomeEffect(IAudioEffect effect)
+    {
+        _waveService.RemoveEffect(CurrentAudioFile, effect.Name);
     }
 
     #endregion
