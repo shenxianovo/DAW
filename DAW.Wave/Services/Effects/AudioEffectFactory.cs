@@ -15,6 +15,7 @@ public class AudioEffectFactory
             "Volume" => new VolumeEffect(),
             "Distortion" => new DistortionEffect(),
             "GraphicEQ" => new GraphicEQEffect(sampleRate),
+            "Reverb" => new ReverbEffect(sampleRate),
             _ => null
         };
     }

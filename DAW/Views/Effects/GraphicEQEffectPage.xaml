@@ -10,8 +10,8 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <StackPanel Margin="15, 30, 15, 0">
-        <TextBlock Text="Graphic EQ"/>
+    <StackPanel Margin="15, 0, 15, 0">
+        <TextBlock Text="Graphic EQ" Margin="0, 5"/>
         <ScrollViewer HorizontalScrollBarVisibility="Auto" Height="300">
             <ItemsControl ItemsSource="{x:Bind ViewModel.Bands, Mode=OneWay}">
                 <ItemsControl.ItemsPanel>

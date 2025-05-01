@@ -86,6 +86,7 @@
                                         <MenuFlyoutItem Text="Volume" Command="{x:Bind ViewModel.AddEffectCommand}" CommandParameter="Volume"/>
                                         <MenuFlyoutItem Text="Distortion" Command="{x:Bind ViewModel.AddEffectCommand}" CommandParameter="Distortion"/>
                                         <MenuFlyoutItem Text="GraphicEQ" Command="{x:Bind ViewModel.AddEffectCommand}" CommandParameter="GraphicEQ"/>
+                                        <MenuFlyoutItem Text="Reverb" Command="{x:Bind ViewModel.AddEffectCommand}" CommandParameter="Reverb"/>
                                     </MenuFlyout>
                                 </DropDownButton.Flyout>
                             </DropDownButton>

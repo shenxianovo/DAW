@@ -17,6 +17,7 @@
     <None Remove="Views\Effects\DistortionEffectPage.xaml" />
     <None Remove="Views\Effects\EffectWindow.xaml" />
     <None Remove="Views\Effects\GraphicEQEffectPage.xaml" />
+    <None Remove="Views\Effects\ReverbEffectPage.xaml" />
     <None Remove="Views\Effects\VolumeEffectPage.xaml" />
     <None Remove="Views\SettingsPage.xaml" />
     <None Remove="Views\ShellPage.xaml" />
@@ -56,6 +57,11 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DAW.Wave\DAW.Wave.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\Effects\ReverbEffectPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="Views\Effects\GraphicEQEffectPage.xaml">
