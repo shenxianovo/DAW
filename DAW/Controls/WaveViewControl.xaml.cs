@@ -27,6 +27,26 @@ namespace DAW.Controls
 {
     public sealed partial class WaveViewControl : UserControl
     {
+        #region Themes
+
+        private void OnActualThemeChanged(FrameworkElement sender, object args)
+        {
+            // 当主题变化时更新 ClearColor
+            UpdateCanvasClearColor(this.ActualTheme);
+        }
+
+        private void UpdateCanvasClearColor(ElementTheme theme)
+        {
+            // 根据当前主题设置 ClearColor
+            var isDarkTheme = theme == ElementTheme.Dark;
+            var clearColor = isDarkTheme ? Colors.Black : Colors.White;
+
+            PreviewCanvasControl.ClearColor = clearColor;
+            EditorCanvasControl.ClearColor = clearColor;
+        }
+
+        #endregion
+
         #region Dependency Properties
 
         public float[]? AudioData
@@ -151,6 +171,12 @@ namespace DAW.Controls
         public WaveViewControl()
         {
             this.InitializeComponent();
+
+            // 监听控件的主题变化
+            this.ActualThemeChanged += OnActualThemeChanged;
+
+            // 初始化 ClearColor
+            UpdateCanvasClearColor(this.ActualTheme);
         }
 
         #region Wave Preview
