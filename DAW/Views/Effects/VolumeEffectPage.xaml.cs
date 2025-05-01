@@ -1,4 +1,5 @@
-﻿using DAW.ViewModels.Effects;
+﻿using DAW.Extensions;
+using DAW.ViewModels.Effects;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -29,6 +30,8 @@ namespace DAW.Views.Effects
         {
             this.InitializeComponent();
             ViewModel = vm;
+            this.SetDesiredHeight(200);
+            this.SetDesiredWidth(300);
         }
     }
 }

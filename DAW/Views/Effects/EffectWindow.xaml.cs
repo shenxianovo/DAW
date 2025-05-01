@@ -14,6 +14,7 @@ using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Microsoft.UI.Windowing;
 using System.Runtime.InteropServices;
+using DAW.Extensions;
 using DAW.Factories;
 using DAW.ViewModels.Effects;
 using DAW.Wave.Services;
@@ -37,7 +38,6 @@ namespace DAW.Views.Effects
             this.ExtendsContentIntoTitleBar = true;
 
             appWindow = GetAppWindowForCurrentWindow();
-            appWindow.Resize(new Windows.Graphics.SizeInt32(400, 300));
 
             OverlappedPresenter presenter = OverlappedPresenter.Create();
             presenter.IsMinimizable = false;  // 禁用最小化
@@ -47,7 +47,9 @@ namespace DAW.Views.Effects
 
             SetOwnership(appWindow, App.MainWindow);
 
-            this.Content = EffectUiFactory.CreateEffectPage(effect);
+            var page = EffectUiFactory.CreateEffectPage(effect);
+            appWindow.Resize(new Windows.Graphics.SizeInt32((int)page.GetDesiredWidth(), (int)page.GetDesiredHeight()));
+            this.Content = page;
 
             CenterToMainWindow();
 

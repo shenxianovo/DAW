@@ -12,6 +12,7 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using DAW.Extensions;
 using DAW.ViewModels.Effects;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -28,6 +29,8 @@ namespace DAW.Views.Effects
         public GraphicEQEffectPage(GraphicEQEffectViewModel vm)
         {
             this.InitializeComponent();
+            this.SetDesiredHeight(500);
+            this.SetDesiredWidth(1100);
             ViewModel = vm;
         }
     }
