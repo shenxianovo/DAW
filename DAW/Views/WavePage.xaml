@@ -52,7 +52,13 @@
                                   Padding="4">
                             <ListView.ItemTemplate>
                                 <DataTemplate x:DataType="models:AudioFile">
-                                    <TextBlock Text="{x:Bind Mode=TwoWay, Path=FileName}"/>
+                                    <TextBlock Text="{x:Bind Mode=TwoWay, Path=FileName}">
+                                        <TextBlock.ContextFlyout>
+                                            <MenuFlyout>
+                                                <MenuFlyoutItem Text="导出" Click="Export"/>
+                                            </MenuFlyout>
+                                        </TextBlock.ContextFlyout>
+                                    </TextBlock>
                                 </DataTemplate>
                             </ListView.ItemTemplate>
                             <interactivity:Interaction.Behaviors>
@@ -100,11 +106,11 @@
                                                     DoubleTapped="OnEffectItemDoubleTapped">
                                             <StackPanel.ContextFlyout>
                                                 <MenuFlyout>
-                                                    <MenuFlyoutItem Text="Delete" Click="RemoveEffect">
+                                                    <MenuFlyoutItem Text="删除" Click="RemoveEffect">
                                                     </MenuFlyoutItem>
                                                 </MenuFlyout>
                                             </StackPanel.ContextFlyout>
-                                            
+
                                             <TextBlock Text="{x:Bind Name}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                                         </StackPanel>
                                     </DataTemplate>
@@ -115,20 +121,6 @@
                 </TabView>
             </Border>
         </Grid>
-
-        <!--
-        <Popup x:Name="MyPopup"
-               IsLightDismissEnabled="True"
-               HorizontalOffset="200"
-               VerticalOffset="100">
-            <Border Background="White" BorderBrush="Gray" BorderThickness="1" Padding="10">
-                <StackPanel>
-                    <TextBlock Text="qweqwe"/>
-                    <Slider/>
-                </StackPanel>
-            </Border>
-        </Popup>
-        -->
 
         <!-- Waveform viewer -->
         <Grid Grid.Column="1">

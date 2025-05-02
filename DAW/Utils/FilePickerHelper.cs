@@ -23,7 +23,7 @@ internal static class FilePickerHelper
         return await picker.PickSingleFileAsync();
     }
 
-    public static async Task<StorageFile> ShowSavePickerAsync(string fileName)
+    public static async Task<StorageFile> ShowSavePickerAsync(string suggestedFileName)
     {
         var picker = new Windows.Storage.Pickers.FileSavePicker();
 
@@ -33,7 +33,7 @@ internal static class FilePickerHelper
 
         picker.SuggestedStartLocation = PickerLocationId.Desktop;
         picker.FileTypeChoices.Add("Audio File", [".wav"]);
-        picker.SuggestedFileName = fileName;
+        picker.SuggestedFileName = suggestedFileName;
 
         return await picker.PickSaveFileAsync();
     }

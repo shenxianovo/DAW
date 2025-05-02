@@ -16,6 +16,7 @@ using DAW.ViewModels;
 using DAW.ViewModels.Effects;
 using DAW.Views.Effects;
 using System.Drawing.Imaging.Effects;
+using DAW.Utils;
 using DAW.Wave.Services;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -48,6 +49,38 @@ namespace DAW.Views
             if (sender is FrameworkElement fe && fe.DataContext is IAudioEffect effect)
             {
                 ViewModel.RevomeEffect(effect);
+            }
+        }
+
+        private async void Export(object sender, RoutedEventArgs e)
+        {
+            var file = await FilePickerHelper.ShowSavePickerAsync(Path.GetFileNameWithoutExtension(ViewModel.CurrentAudioFile.FileName));
+            if (file == null) return;
+
+            try
+            {
+                await ViewModel.ExportFileAsync(file.Path);
+
+                ContentDialog dialog = new ContentDialog
+                {
+                    Title = "导出成功",
+                    Content = $"成功导出为{file.Path}",
+                    CloseButtonText = "确定",
+                    XamlRoot = this.XamlRoot
+                };
+                await dialog.ShowAsync();
+
+            }
+            catch (Exception ex)
+            {
+                ContentDialog dialog = new ContentDialog
+                {
+                    Title = "导出失败",
+                    Content = ex.Message,
+                    CloseButtonText = "确定",
+                    XamlRoot = this.XamlRoot
+                };
+                await dialog.ShowAsync();
             }
         }
     }

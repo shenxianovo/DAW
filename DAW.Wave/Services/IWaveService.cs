@@ -10,6 +10,7 @@ namespace DAW.Wave.Services;
 public interface IWaveService
 {
     public Task<AudioFile> OpenAsync(string filePath);
+    public Task ExportAsync(AudioFile audioFile, string targetFilePath);
 
     public Task<float[]> LoadWaveAsync(string filePath);
     public void Close(AudioFile audioFile);

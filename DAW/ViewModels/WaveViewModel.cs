@@ -108,6 +108,11 @@ public partial class WaveViewModel : ObservableRecipient
         SelectedAudioIndex = AudioList.Count - 1;
     }
 
+    public async Task ExportFileAsync(string targetPath)
+    {
+        await _waveService.ExportAsync(CurrentAudioFile, targetPath);
+    }
+
     [RelayCommand]
     private void TogglePlayPause()
     {

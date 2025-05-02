@@ -68,6 +68,31 @@ public class WaveService : IWaveService
         return convertedAudioFile;
     }
 
+    public async Task ExportAsync(AudioFile audioFile, string targetFilePath)
+    {
+        if (audioFile == null) return;
+
+        // 为了避免播放过程中读写冲突，这里重新打开一次音频，用同样的效果链
+        // 注意：以下实现是简化示例，项目中可根据需要改进
+        var reader = new AudioFileReader(audioFile.FilePath);
+        var realTimeProvider = new RealtimeEffectSampleProvider(reader, audioFile.AudioEffects);
+
+        // 根据原音频的格式创建 WaveFileWriter
+        var waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(reader.WaveFormat.SampleRate, reader.WaveFormat.Channels);
+        await using var writer = new WaveFileWriter(targetFilePath, waveFormat);
+
+        // 每次读取部分样本并写入文件
+        float[] buffer = new float[8192];
+        int read;
+        while ((read = realTimeProvider.Read(buffer, 0, buffer.Length)) > 0)
+        {
+            writer.WriteSamples(buffer, 0, read);
+        }
+
+        await reader.DisposeAsync();
+        // 完成后即可生成带效果的 wav 文件
+    }
+
     public async Task<float[]> LoadWaveAsync(string filePath)
     {
         return await Task.Run(() =>
