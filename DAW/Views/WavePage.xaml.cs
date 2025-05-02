@@ -83,5 +83,10 @@ namespace DAW.Views
                 await dialog.ShowAsync();
             }
         }
+
+        private void Close(object sender, RoutedEventArgs e)
+        {
+            ViewModel.CloseCommand.Execute(new object());
+        }
     }
 }

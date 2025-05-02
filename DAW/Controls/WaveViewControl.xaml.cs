@@ -75,6 +75,19 @@ namespace DAW.Controls
                 typeof(WaveViewControl),
                 new PropertyMetadata(1));
 
+        public int SampleRate
+        {
+            get => (int)GetValue(SampleRateProperty);
+            set => SetValue(SampleRateProperty, value);
+        }
+
+        public static readonly DependencyProperty SampleRateProperty =
+            DependencyProperty.Register(
+                nameof(SampleRate),
+                typeof(int),
+                typeof(WaveViewControl),
+                new PropertyMetadata(44100));
+
         public long VisibleLeftFrame
         {
             get => (long)GetValue(VisibleLeftFrameProperty);
@@ -152,7 +165,7 @@ namespace DAW.Controls
                 control._editorPeakArrays = null;
                 control.PreviewCanvasControl.Invalidate();
                 control.EditorCanvasControl.Invalidate();
-                control.MelSpectrogramCanvasControl.Invalidate();
+                //control.MelSpectrogramCanvasControl.Invalidate();
             }
         }
 
@@ -162,7 +175,7 @@ namespace DAW.Controls
             {
                 control.PreviewCanvasControl.Invalidate();
                 control.EditorCanvasControl.Invalidate();
-                control.MelSpectrogramCanvasControl.Invalidate();
+                //control.MelSpectrogramCanvasControl.Invalidate();
             }
         }
 
@@ -711,110 +724,227 @@ namespace DAW.Controls
 
         #endregion
 
-        #region Mel Spectrogram
-        private void MelSpectrogramCanvasControl_Draw(CanvasControl sender, CanvasDrawEventArgs args)
-        {
-        }
+        //#region Mel Spectrogram
 
-        #endregion
+        //private float[][]? _melSpectrogramData;
 
-        #region Helpers
-
-        //private void DrawWave(CanvasControl sender, CanvasDrawEventArgs args)
+        //private void BuildMelSpectrogramIfNeeded()
         //{
-        //    if (_peakArray == null || _peakArray.Length < 2)
+        //    // 若已计算过，不再重复
+        //    if (_melSpectrogramData != null) return;
+
+        //    if (AudioData == null || AudioData.Length == 0) return;
+
+        //    // 假设只用单声道进行计算，若多声道可自行混合或选择一个声道
+        //    // 这里以 Channels 的第一个声道为例
+        //    int totalSamples = AudioData.Length / Math.Max(Channels, 1);
+        //    // fftSize / hopSize / melBins 可根据需求调整
+        //    int fftSize = 1024;
+        //    int hopSize = 512;
+        //    int melBins = 64;
+
+        //    // 简单示例：若多声道，先取第一个声道的数据
+        //    float[] monoData = new float[totalSamples];
+        //    for (int i = 0; i < totalSamples; i++)
+        //    {
+        //        monoData[i] = AudioData[i * Channels];
+        //    }
+
+        //    // 计算 Mel 频谱矩阵
+        //    _melSpectrogramData = ComputeMelSpectrogram(monoData, SampleRate, fftSize, hopSize, melBins);
+        //}
+
+        //private float[][] ComputeMelSpectrogram(
+        //    float[] audioData,
+        //    int sampleRate,
+        //    int fftSize,
+        //    int hopSize,
+        //    int melBins)
+        //{
+        //    // 1. 计算帧数
+        //    int frameCount = (audioData.Length - fftSize) / hopSize + 1;
+        //    if (frameCount < 1) return new float[0][];
+
+        //    // 准备返回的 Mel 频谱矩阵
+        //    float[][] melSpectrogram = new float[frameCount][];
+        //    for (int i = 0; i < frameCount; i++)
+        //    {
+        //        melSpectrogram[i] = new float[melBins];
+        //    }
+
+        //    // 2. 构建 Mel 滤波器组
+        //    int specSize = fftSize / 2 + 1; // 频谱的有效频率点数
+        //    float[][] melFilters = BuildMelFilterBank(sampleRate, fftSize, melBins);
+
+        //    // 3. 分帧 + STFT + 应用 Mel 滤波器
+        //    for (int frame = 0; frame < frameCount; frame++)
+        //    {
+        //        int startPos = frame * hopSize;
+
+        //        // 提取一帧并加窗（汉宁窗）
+        //        float[] windowed = new float[fftSize];
+        //        for (int n = 0; n < fftSize; n++)
+        //        {
+        //            if (startPos + n < audioData.Length)
+        //            {
+        //                float window = 0.5f - 0.5f * (float)Math.Cos(2.0 * Math.PI * n / (fftSize - 1));
+        //                windowed[n] = audioData[startPos + n] * window;
+        //            }
+        //        }
+
+        //        // 执行 FFT
+        //        Complex[] freqDomain = Fft(windowed);
+        //        float[] magSpectrum = new float[specSize];
+
+        //        // 只取前半部分频谱的幅度
+        //        for (int k = 0; k < specSize; k++)
+        //        {
+        //            magSpectrum[k] = (float)freqDomain[k].Magnitude;
+        //        }
+
+        //        // 4. 将幅度谱与 Mel 滤波器相乘并取对数
+        //        for (int m = 0; m < melBins; m++)
+        //        {
+        //            float sum = 0f;
+        //            for (int k = 0; k < specSize; k++) // 确保索引范围一致
+        //            {
+        //                sum += melFilters[m][k] * magSpectrum[k];
+        //            }
+        //            // 对数缩放 + 避免 log(0)
+        //            melSpectrogram[frame][m] = (float)Math.Log10(Math.Max(sum, 1e-6));
+        //        }
+        //    }
+
+        //    return melSpectrogram;
+        //}
+
+
+        //private float[][] BuildMelFilterBank(int sampleRate, int fftSize, int melBins)
+        //{
+        //    int specSize = fftSize / 2 + 1;
+        //    float[][] filters = new float[melBins][];
+        //    for (int m = 0; m < melBins; m++)
+        //    {
+        //        filters[m] = new float[specSize];
+        //    }
+        //    // 简易实现：按 melBins 均分频率段并填充 1/0
+        //    // 实际应用应使用三角通带、mel 频率公式等
+        //    for (int m = 0; m < melBins; m++)
+        //    {
+        //        int startBin = (int)(m * (specSize / (float)melBins));
+        //        int endBin = (int)((m + 1) * (specSize / (float)melBins));
+        //        for (int k = startBin; k < endBin && k < specSize; k++)
+        //        {
+        //            filters[m][k] = 1f;
+        //        }
+        //    }
+        //    return filters;
+        //}
+
+        //private Complex[] Fft(float[] timeData)
+        //{
+        //    int N = timeData.Length;
+        //    Complex[] buffer = new Complex[N];
+        //    for (int i = 0; i < N; i++)
+        //    {
+        //        buffer[i] = new Complex(timeData[i], 0);
+        //    }
+
+        //    // Cooley–Tukey FFT（递归或迭代版均可）
+        //    // 这里演示迭代实现
+        //    int bits = (int)Math.Log2(N);
+        //    // Bit-reversal
+        //    for (int i = 1, j = 0; i < N; i++)
+        //    {
+        //        int bit = N >> 1;
+        //        for (; j >= bit; bit >>= 1)
+        //        {
+        //            j -= bit;
+        //        }
+        //        j += bit;
+        //        if (i < j)
+        //        {
+        //            (buffer[i], buffer[j]) = (buffer[j], buffer[i]);
+        //        }
+        //    }
+        //    // butterfly
+        //    for (int len = 2; len <= N; len <<= 1)
+        //    {
+        //        double angle = 2 * Math.PI / len;
+        //        Complex wlen = new Complex(Math.Cos(angle), Math.Sin(angle));
+        //        for (int i = 0; i < N; i += len)
+        //        {
+        //            Complex w = Complex.One;
+        //            for (int k = 0; k < len / 2; k++)
+        //            {
+        //                Complex u = buffer[i + k];
+        //                Complex v = buffer[i + k + len / 2] * w;
+        //                buffer[i + k] = u + v;
+        //                buffer[i + k + len / 2] = u - v;
+        //                w *= wlen;
+        //            }
+        //        }
+        //    }
+        //    return buffer;
+        //}
+
+        //private void MelSpectrogramCanvasControl_Draw(CanvasControl sender, CanvasDrawEventArgs args)
+        //{
+        //    // 若尚未计算 Mel 频谱，则进行计算
+        //    BuildMelSpectrogramIfNeeded();
+        //    var ds = args.DrawingSession;
+
+        //    if (_melSpectrogramData == null || _melSpectrogramData.Length == 0)
         //        return;
 
         //    float canvasWidth = (float)sender.ActualWidth;
         //    float canvasHeight = (float)sender.ActualHeight;
-        //    if (canvasWidth <= 0) return;
+        //    if (canvasWidth <= 0 || canvasHeight <= 0) return;
 
-        //    var ds = args.DrawingSession;
-        //    float verticalCenter = canvasHeight / 2;
+        //    // Mel 频谱大小
+        //    int frameCount = _melSpectrogramData.Length;
+        //    int melBins = _melSpectrogramData[0].Length;
 
-        //    using var pathBuilder = new CanvasPathBuilder(ds);
-        //    var topPoints = new List<Vector2>();
-        //    var bottomPoints = new List<Vector2>();
+        //    // 每个帧对应的可视宽度
+        //    float pxPerFrame = canvasWidth / frameCount;
+        //    // 每个 mel bin 对应的可视高度
+        //    float pxPerBin = canvasHeight / melBins;
 
-        //    int canvasWidthInt = (int)canvasWidth;
-        //    int totalPairs = _peakArray.Length / 2;
-        //    float samplesPerPixel = (float)totalPairs / canvasWidthInt;
-
-        //    for (int x = 0; x < canvasWidthInt; x++)
+        //    // 找到最大最小值，以便归一化映射颜色
+        //    float minVal = float.MaxValue, maxVal = float.MinValue;
+        //    foreach (var frame in _melSpectrogramData)
         //    {
-        //        int start = (int)(x * samplesPerPixel);
-        //        int end = (int)((x + 1) * samplesPerPixel);
-        //        if (end >= totalPairs) end = totalPairs - 1;
-
-        //        float minVal = float.MaxValue;
-        //        float maxVal = float.MinValue;
-        //        for (int i = start; i <= end; i++)
+        //        foreach (var val in frame)
         //        {
-        //            float localMin = _peakArray[i * 2];
-        //            float localMax = _peakArray[i * 2 + 1];
-        //            if (localMin < minVal) minVal = localMin;
-        //            if (localMax > maxVal) maxVal = localMax;
+        //            if (val < minVal) minVal = val;
+        //            if (val > maxVal) maxVal = val;
         //        }
-
-        //        float yMin = verticalCenter - minVal * (canvasHeight / 2);
-        //        float yMax = verticalCenter - maxVal * (canvasHeight / 2);
-        //        topPoints.Add(new Vector2(x, yMax));
-        //        bottomPoints.Add(new Vector2(x, yMin));
         //    }
 
-        //    if (topPoints.Count > 0)
+        //    float range = Math.Max(1e-6f, maxVal - minVal);
+
+        //    // 按帧/频率循环，绘制色块
+        //    for (int f = 0; f < frameCount; f++)
         //    {
-        //        pathBuilder.BeginFigure(topPoints[0]);
-        //        for (int i = 1; i < topPoints.Count; i++)
+        //        for (int m = 0; m < melBins; m++)
         //        {
-        //            pathBuilder.AddLine(topPoints[i]);
+        //            float value = _melSpectrogramData[f][m];
+        //            // [minVal, maxVal] → [0,1]
+        //            float normalized = (value - minVal) / range;
+
+        //            // 简单从蓝色(低)到红色(高)渐变，可自由定义
+        //            byte r = (byte)(normalized * 255);
+        //            byte g = 0;
+        //            byte b = (byte)(255 - r);
+
+        //            float x = f * pxPerFrame;
+        //            float y = (melBins - 1 - m) * pxPerBin;
+        //            ds.FillRectangle(x, y, pxPerFrame, pxPerBin, Color.FromArgb(255, r, g, b));
         //        }
-        //        for (int i = bottomPoints.Count - 1; i >= 0; i--)
-        //        {
-        //            pathBuilder.AddLine(bottomPoints[i]);
-        //        }
-        //        pathBuilder.EndFigure(CanvasFigureLoop.Closed);
-        //    }
-
-        //    using var geometry = CanvasGeometry.CreatePath(pathBuilder);
-        //    ds.FillGeometry(geometry, Colors.SkyBlue);
-        //}
-
-        //private void DrawSelectedArea(CanvasControl sender, CanvasDrawEventArgs args)
-        //{
-        //    if (_isSelecting || IsValidSelection())
-        //    {
-        //        var ds = args.DrawingSession;
-        //        float left = Math.Min(_selectStartX, _selectEndX);
-        //        float right = Math.Max(_selectStartX, _selectEndX);
-        //        float height = (float)sender.ActualHeight;
-
-        //        ds.FillRectangle(left, 0, right - left, height, Color.FromArgb(60, 0, 120, 215));
-        //        ds.DrawRectangle(left, 0, right - left, height, Color.FromArgb(255, 0, 120, 215));
         //    }
         //}
 
-        //private bool IsValidSelection() => Math.Abs(_selectEndX - _selectStartX) > 2;
-
-        //private void CalculateSampleRange()
-        //{
-        //    if (_peakArray == null || _peakArray.Length < 2) return;
-        //    float canvasWidth = (float)PreviewCanvasControl.ActualWidth;
-        //    if (canvasWidth <= 0) return;
-
-        //    int totalPairs = _peakArray.Length / 2;
-        //    float samplesPerPixel = totalPairs / canvasWidth;
-        //    float left = Math.Min(_selectStartX, _selectEndX);
-        //    float right = Math.Max(_selectStartX, _selectEndX);
-
-        //    int start = (int)(left * samplesPerPixel);
-        //    int end = (int)(right * samplesPerPixel);
-        //    // 确保在范围内并更新依赖属性
-        //    StartSampleIndex = Math.Clamp(start, 0, totalPairs - 1);
-        //    EndSampleIndex = Math.Clamp(end, 0, totalPairs - 1);
-        //}
-
-        #endregion
+        //#endregion
 
     }
 }

@@ -39,7 +39,7 @@
 
             <!-- Audio list -->
             <Border Grid.Row="0"
-                    BorderThickness="2" BorderBrush="Gray" CornerRadius="10"
+                    BorderThickness="1" BorderBrush="#AAAAAA"  CornerRadius="10"
                     Margin="0, 0, 2, 2">
                 <TabView IsAddTabButtonVisible="False"
                          HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
@@ -56,6 +56,7 @@
                                         <TextBlock.ContextFlyout>
                                             <MenuFlyout>
                                                 <MenuFlyoutItem Text="导出" Click="Export"/>
+                                                <MenuFlyoutItem Text="关闭" Click="Close"/>
                                             </MenuFlyout>
                                         </TextBlock.ContextFlyout>
                                     </TextBlock>
@@ -73,7 +74,7 @@
 
             <!-- Editor info list -->
             <Border Grid.Row="1"
-                    BorderThickness="2" BorderBrush="Gray" CornerRadius="10"
+                    BorderThickness="1" BorderBrush="#AAAAAA" CornerRadius="10"
                     Margin="0, 2, 2, 0">
 
                 <TabView IsAddTabButtonVisible="False"
@@ -133,6 +134,7 @@
             <controls:WaveViewControl Grid.Row="0"
                                       AudioData="{x:Bind ViewModel.CurrentAudioFile.AudioData, Mode=OneWay}"
                                       Channels="{x:Bind ViewModel.CurrentAudioFile.Channels, Mode=OneWay}"
+                                      SampleRate="{x:Bind ViewModel.CurrentAudioFile.SampleRate, Mode=OneWay}"
                                       VisibleLeftFrame="{x:Bind ViewModel.CurrentAudioFile.VisibleLeftFrameIndex, Mode=TwoWay}"
                                       VisibleRightFrame="{x:Bind ViewModel.CurrentAudioFile.VisibleRightFrameIndex, Mode=TwoWay}"
                                       SelectedLeftSample="{x:Bind ViewModel.CurrentAudioFile.SelectedLeftFrameIndex, Mode=TwoWay}"
@@ -141,7 +143,7 @@
                                       HorizontalAlignment="Stretch"/>
 
 
-            <StackPanel Grid.Row="1" Orientation="Horizontal">
+            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="5" Margin="0, 5">
                 <Button Command="{x:Bind ViewModel.PlayCommand}">
                     <FontIcon Glyph="&#xE768;"/>
                 </Button>
@@ -151,7 +153,7 @@
                 <Button Command="{x:Bind ViewModel.CloseCommand}">
                     <FontIcon Glyph="&#xE894;"/>
                 </Button>
-                <!-- 调试信息 -->
+                <!-- 调试信息 
                 <StackPanel>
                     <TextBlock Text="VisibleLeftFrameIndex"/>
                     <TextBlock Text="{x:Bind ViewModel.CurrentAudioFile.VisibleLeftFrameIndex, Mode=OneWay}"/>
@@ -164,6 +166,7 @@
                     <TextBlock Text="PlaybackPositionIndex"/>
                     <TextBlock Text="{x:Bind ViewModel.CurrentAudioFile.PlaybackPositionFrameIndex, Mode=OneWay}"/>
                 </StackPanel>
+                -->
             </StackPanel>
         </Grid>
 

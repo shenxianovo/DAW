@@ -11,14 +11,11 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10*"/>
         </Grid.RowDefinitions>
         
         <xaml:CanvasControl Grid.Row="0"
-                            Height="40"
                             x:Name="PreviewCanvasControl"
                             ClearColor="{StaticResource CanvasClearColor}"
                             Draw="PreviewCanvasControl_Draw"
@@ -33,9 +30,11 @@
                             PointerPressed="OnEditorCanvasPointerPressed"
                             PointerMoved="OnEditorCanvasPointerMoved"
                             PointerReleased="OnEditorCanvasPointerReleased"/>
+        <!--
         <xaml:CanvasControl Grid.Row="2"
                             x:Name="MelSpectrogramCanvasControl"
                             ClearColor="{StaticResource CanvasClearColor}"
                             Draw="MelSpectrogramCanvasControl_Draw"/>
+        -->
     </Grid>
 </UserControl>
