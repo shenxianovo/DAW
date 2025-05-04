@@ -13,38 +13,67 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     NavigationCacheMode="Required">
 
-    <StackPanel>
-        <TextBlock Text="Settings" FontSize="30"/>
-        <TextBlock Text="输入"/>
-        <controls:SettingsCard Header="音频输入设备"
-                               Description="This is description"
+    <ScrollView>
+        <StackPanel Spacing="10" Margin="20">
+            <TextBlock Text="设置" FontSize="30"/>
+            <TextBlock Text="输入与输出"/>
+            <controls:SettingsCard Header="音频输入设备"
                                HeaderIcon="{winUi:FontIcon Glyph=&#xE720;}">
-            <ComboBox x:Name="InputDeviceComboBox" MinWidth="300"
+                <ComboBox x:Name="InputDeviceComboBox" MinWidth="300"
                       ItemsSource="{x:Bind ViewModel.InputDevices}"
                       SelectedItem="{x:Bind ViewModel.SelectedInputDevice, Mode=TwoWay}">
-                <interactivity:Interaction.Behaviors>
-                    <interactivity:EventTriggerBehavior EventName="SelectionChanged">
-                        <interactivity:InvokeCommandAction Command="{x:Bind ViewModel.SetInputDeviceCommand}"
+                    <interactivity:Interaction.Behaviors>
+                        <interactivity:EventTriggerBehavior EventName="SelectionChanged">
+                            <interactivity:InvokeCommandAction Command="{x:Bind ViewModel.SetInputDeviceCommand}"
                                                            CommandParameter="{x:Bind InputDeviceComboBox.SelectedItem, Mode=OneWay}" />
-                    </interactivity:EventTriggerBehavior>
-                </interactivity:Interaction.Behaviors>
-            </ComboBox>
-        </controls:SettingsCard>
-
-        <TextBlock Text="输出"/>
-        <controls:SettingsCard Header="音频输出设备"
+                        </interactivity:EventTriggerBehavior>
+                    </interactivity:Interaction.Behaviors>
+                </ComboBox>
+            </controls:SettingsCard>
+            <controls:SettingsCard Header="音频输出设备"
                                HeaderIcon="{winUi:FontIcon Glyph=&#xE7F6;}">
-            <ComboBox x:Name="OutputDeviceComboBox" MinWidth="300"
+                <ComboBox x:Name="OutputDeviceComboBox" MinWidth="300"
                       ItemsSource="{x:Bind ViewModel.OutputDevices}"
                       SelectedItem="{x:Bind ViewModel.SelectedOutputDevice, Mode=TwoWay}">
-                <interactivity:Interaction.Behaviors>
-                    <interactivity:EventTriggerBehavior EventName="SelectionChanged">
-                        <interactivity:InvokeCommandAction Command="{x:Bind ViewModel.SetOutputDeviceCommand}"
+                    <interactivity:Interaction.Behaviors>
+                        <interactivity:EventTriggerBehavior EventName="SelectionChanged">
+                            <interactivity:InvokeCommandAction Command="{x:Bind ViewModel.SetOutputDeviceCommand}"
                                                            CommandParameter="{x:Bind OutputDeviceComboBox.SelectedItem, Mode=OneWay}" />
-                    </interactivity:EventTriggerBehavior>
-                </interactivity:Interaction.Behaviors>
-            </ComboBox>
-        </controls:SettingsCard>
-    </StackPanel>
+                        </interactivity:EventTriggerBehavior>
+                    </interactivity:Interaction.Behaviors>
+                </ComboBox>
+            </controls:SettingsCard>
+
+            <TextBlock Text="关于"/>
+            <controls:SettingsExpander Header="DAW"
+                                   Description=" © 2025 shenxianovo. All rights reserved."
+                                   HeaderIcon="{winUi:FontIcon Glyph=&#xE8AF;}">
+                <controls:SettingsExpander.Items>
+                    <controls:SettingsCard>
+                        <controls:SettingsCard.Header>
+                            <StackPanel>
+                                <TextBlock Text="源代码" Margin="12, 0, 0, 0"/>
+                                <HyperlinkButton Content="Github repository" NavigateUri="https://github.com/shenxianovo/DAW"/>
+                            </StackPanel>
+                        </controls:SettingsCard.Header>
+                    </controls:SettingsCard>
+                    <controls:SettingsCard>
+                        <controls:SettingsCard.Header>
+                            <StackPanel>
+                                <TextBlock Text="依赖项" Margin="12, 0, 0, 0"/>
+                                <HyperlinkButton Content="Windows App SDK 1.7" NavigateUri="https://github.com/microsoft/WindowsAppSDK"/>
+                                <HyperlinkButton Content="Windows UI Library" NavigateUri="https://github.com/microsoft/microsoft-ui-xaml"/>
+                                <HyperlinkButton Content="Windows Community Toolkit" NavigateUri="https://github.com/CommunityToolkit/Windows"/>
+                                <HyperlinkButton Content="NAudio" NavigateUri="https://github.com/naudio/NAudio"/>
+                                <HyperlinkButton Content="Win2D" NavigateUri="https://github.com/Microsoft/Win2D"/>
+
+                            </StackPanel>
+                        </controls:SettingsCard.Header>
+                    </controls:SettingsCard>
+                </controls:SettingsExpander.Items>
+            </controls:SettingsExpander>
+        </StackPanel>
+
+    </ScrollView>
 
 </Page>
