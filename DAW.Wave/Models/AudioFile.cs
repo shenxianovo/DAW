@@ -43,7 +43,8 @@ public partial class AudioFile
 
     #region Audio Data
 
-    public float[] AudioData { get; set; }
+    [ObservableProperty]
+    public partial float[] AudioData { get; set; }
 
     #endregion
 

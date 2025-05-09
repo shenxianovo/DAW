@@ -53,7 +53,7 @@
                         <controls:SettingsCard.Header>
                             <StackPanel>
                                 <TextBlock Text="源代码" Margin="12, 0, 0, 0"/>
-                                <HyperlinkButton Content="Github repository" NavigateUri="https://github.com/shenxianovo/DAW"/>
+                                <HyperlinkButton Content="GitHub repository" NavigateUri="https://github.com/shenxianovo/DAW"/>
                             </StackPanel>
                         </controls:SettingsCard.Header>
                     </controls:SettingsCard>

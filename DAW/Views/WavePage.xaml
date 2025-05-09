@@ -23,6 +23,13 @@
                 </interactivity:EventTriggerBehavior>
             </interactivity:Interaction.Behaviors>
         </KeyboardAccelerator>
+        <KeyboardAccelerator Key="Back">
+            <interactivity:Interaction.Behaviors>
+                <interactivity:EventTriggerBehavior EventName="Invoked">
+                    <interactivity:InvokeCommandAction Command="{x:Bind ViewModel.ClipAudioCommand}"/>
+                </interactivity:EventTriggerBehavior>
+            </interactivity:Interaction.Behaviors>
+        </KeyboardAccelerator>
     </Page.KeyboardAccelerators>
 
     <Grid>

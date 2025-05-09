@@ -162,6 +162,35 @@ public partial class WaveViewModel : ObservableRecipient
         _waveService.RemoveEffect(CurrentAudioFile, effect.Name);
     }
 
+    [RelayCommand]
+    private void ClipAudio()
+    {
+        if (CurrentAudioFile == null || CurrentAudioFile.AudioData == null || CurrentAudioFile.AudioData.Length == 0)
+            return;
+
+        long startFrame = CurrentAudioFile.SelectedLeftFrameIndex;
+        long endFrame = CurrentAudioFile.SelectedRightFrameIndex;
+
+        // 确保 startFrame <= endFrame
+        if (startFrame > endFrame)
+        {
+            (startFrame, endFrame) = (endFrame, startFrame);
+        }
+
+        // 再次检查有效性，尽管服务层也会检查
+        long totalFrames = CurrentAudioFile.AudioData.Length / CurrentAudioFile.Channels;
+        if (startFrame < 0 || endFrame >= totalFrames || startFrame > endFrame)
+        {
+            System.Diagnostics.Debug.WriteLine($"WaveViewModel.ClipAudio: 无效选区 {startFrame}-{endFrame} for total frames {totalFrames}");
+            return;
+        }
+
+        _waveService.ClipAudio(CurrentAudioFile, startFrame, endFrame);
+
+        // WaveService 直接修改 CurrentAudioFile 对象。
+        // AudioFile 中的属性更改应触发 UI 更新。
+    }
+
     #endregion
 
     #region Helper Methods

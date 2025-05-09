@@ -33,6 +33,8 @@ namespace DAW.Controls
         {
             // 当主题变化时更新 ClearColor
             UpdateCanvasClearColor(this.ActualTheme);
+            PreviewCanvasControl.Invalidate();
+            EditorCanvasControl.Invalidate();
         }
 
         private void UpdateCanvasClearColor(ElementTheme theme)

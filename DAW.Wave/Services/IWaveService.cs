@@ -22,4 +22,6 @@ public interface IWaveService
 
     public void AddEffect(AudioFile audioFile, string effectName);
     public void RemoveEffect(AudioFile audioFile, string effectName);
+
+    void ClipAudio(AudioFile audioFile, long startFrame, long endFrame);
 }
