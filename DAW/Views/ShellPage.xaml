@@ -16,7 +16,10 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="DAW App" Height="32" VerticalAlignment="Center" Margin="10, 0, 0, 0"/>
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10, 0, 0, 0">
+            <ImageIcon Source="/Assets/Square44x44Logo.png" MaxWidth="32"/>
+            <TextBlock Text="DAW App" Height="32" VerticalAlignment="Center" Margin="0, 12, 0, 0"/>
+        </StackPanel>
         <NavigationView Grid.Row="1" x:Name="NavView"
                         ItemInvoked="NavView_ItemInvoked">
             <NavigationView.MenuItems>
