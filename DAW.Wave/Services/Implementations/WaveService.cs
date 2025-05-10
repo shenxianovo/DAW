@@ -95,12 +95,51 @@ public class WaveService : IWaveService // 确保实现了正确的接口
         await Task.Run(() =>
         {
             var waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(audioFile.SampleRate, audioFile.Channels);
-            // 使用 WaveFileWriter 实例来写入
+            
+            // Create a sample provider chain to apply effects
+            var memoryProvider = new MemorySampleProvider(audioFile.AudioData, waveFormat);
+            ISampleProvider effectProvider = memoryProvider; // Start with the memory provider
+
+            if (audioFile.AudioEffects != null && audioFile.AudioEffects.Any())
+            {
+                // If there are effects, wrap the memoryProvider with a RealtimeEffectSampleProvider
+                // or a similar mechanism to apply effects during read.
+                // For simplicity, we'll create a temporary RealtimeEffectSampleProvider instance here.
+                // Note: RealtimeEffectSampleProvider might be designed for real-time playback.
+                // For offline processing, a dedicated effect chain processor might be more robust.
+                // However, for this context, we'll use it to apply the current effects.
+                var tempEffectProvider = new RealtimeEffectSampleProvider(memoryProvider, audioFile.AudioEffects);
+                effectProvider = tempEffectProvider;
+            }
+
+            // Read all samples from the (potentially effected) provider
+            // Determine the total number of samples to read
+            long totalSamplesToRead = audioFile.AudioData.Length; // Correctly get total samples from the source AudioData
+            if (totalSamplesToRead == 0)
+            {
+                // Handle empty audio case after effect chain setup
+                using (var writer = new WaveFileWriter(targetFilePath, waveFormat))
+                {
+                    // Write an empty file if there's no data
+                }
+                System.Diagnostics.Debug.WriteLine($"Exported empty file {audioFile.FileName} to {targetFilePath} as source was empty.");
+                return;
+            }
+
+            // Buffer to read into
+            // NAudio's Read method reads samples, not bytes, for ISampleProvider
+            float[] buffer = new float[totalSamplesToRead]; 
+            int samplesRead = effectProvider.Read(buffer, 0, buffer.Length);
+
+            // Use WaveFileWriter instance to write the processed samples
             using (var writer = new WaveFileWriter(targetFilePath, waveFormat))
             {
-                writer.WriteSamples(audioFile.AudioData, 0, audioFile.AudioData.Length);
+                if (samplesRead > 0)
+                {
+                    writer.WriteSamples(buffer, 0, samplesRead);
+                }
             }
-            System.Diagnostics.Debug.WriteLine($"Exported {audioFile.FileName} to {targetFilePath}");
+            System.Diagnostics.Debug.WriteLine($"Exported {audioFile.FileName} with effects to {targetFilePath}");
         });
     }
 
@@ -259,10 +298,6 @@ public class WaveService : IWaveService // 确保实现了正确的接口
         }
     }
 
-    // GetCurrentTime 和 IsPlaying 不在您的接口中，但通常有用。
-    // public TimeSpan GetCurrentTime(AudioFile audioFile) { ... }
-    // public bool IsPlaying(AudioFile audioFile) { ... }
-
     // 9. AddEffect
     public void AddEffect(AudioFile audioFile, string effectName)
     {
@@ -361,10 +396,6 @@ public class WaveService : IWaveService // 确保实现了正确的接口
 
         CleanUpPlayerComponents(audioFile, false);
     }
-
-    // NotifyAudioDataChanged 方法不在您的接口中，但如果 AudioFile 内部有撤销/重做逻辑，
-    // 并且这些逻辑直接修改 AudioData，则可能需要一个类似的方法来通知 WaveService 清理播放器。
-    // public void NotifyAudioDataChanged(AudioFile audioFile) { ... }
 
     private async Task<string> ConvertToPcm32(string sourcePath)
     {
