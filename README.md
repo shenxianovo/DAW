@@ -2,7 +2,7 @@
 
 基于 WinUI3 的音频处理程序，名字没想好...
 
-软构的课程大作业...
+软构的课程大作业...（平时作业在[这里](https://github.com/shenxianovo/SoftwareConstruction)）
 
 ## 仓库结构
 
