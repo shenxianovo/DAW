@@ -71,6 +71,13 @@ namespace DAW
             MainWindow.Activate();
             MainWindow.ExtendsContentIntoTitleBar = true;
             MainWindow.Content = App.GetService<ShellPage>();
+
+            // 窗口关闭时释放服务资源（特别是音频设备句柄）
+            MainWindow.Closed += (s, e) =>
+            {
+                if (Host.Services.GetService(typeof(IWaveService)) is IDisposable disposable)
+                    disposable.Dispose();
+            };
         }
     }
 }

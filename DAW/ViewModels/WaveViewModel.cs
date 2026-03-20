@@ -37,6 +37,11 @@ public partial class WaveViewModel : ObservableRecipient
     [ObservableProperty]
     public partial bool IsPlaying { get; set; } = false;
 
+    /// <summary>
+    /// 缓存的空 AudioFile 对象，防止每次属性访问都创建新实例。
+    /// </summary>
+    private static readonly AudioFile EmptyAudioFile = new();
+
     public AudioFile CurrentAudioFile
     {
         get
@@ -45,7 +50,7 @@ public partial class WaveViewModel : ObservableRecipient
             {
                 return AudioList[SelectedAudioIndex];
             }
-            return new AudioFile();
+            return EmptyAudioFile;
         }
     }
 

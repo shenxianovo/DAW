@@ -12,10 +12,11 @@ using System.IO;
 
 namespace DAW.Wave.Services.Implementations;
 
-public class WaveService : IWaveService
+public class WaveService : IWaveService, IDisposable
 {
     private readonly IAudioDevice _audioDevice;
     private readonly AudioEffectFactory _audioEffectFactory;
+    private bool _disposed;
 
     private readonly ConcurrentDictionary<AudioFile, WaveOutEvent> _playerMap = new();
     private readonly ConcurrentDictionary<AudioFile, RealtimeEffectSampleProvider> _realtimeProviders = new();
@@ -123,50 +124,28 @@ public class WaveService : IWaveService
         await Task.Run(() =>
         {
             var waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(audioFile.SampleRate, audioFile.Channels);
-            
-            // Create a sample provider chain to apply effects
+
             var memoryProvider = new MemorySampleProvider(audioFile.AudioData, waveFormat);
-            ISampleProvider effectProvider = memoryProvider; // Start with the memory provider
+            ISampleProvider effectProvider = memoryProvider;
 
             if (audioFile.AudioEffects != null && audioFile.AudioEffects.Any())
             {
-                // If there are effects, wrap the memoryProvider with a RealtimeEffectSampleProvider
-                // or a similar mechanism to apply effects during read.
-                // For simplicity, we'll create a temporary RealtimeEffectSampleProvider instance here.
-                // Note: RealtimeEffectSampleProvider might be designed for real-time playback.
-                // For offline processing, a dedicated effect chain processor might be more robust.
-                // However, for this context, we'll use it to apply the current effects.
-                var tempEffectProvider = new RealtimeEffectSampleProvider(memoryProvider, audioFile.AudioEffects);
-                effectProvider = tempEffectProvider;
+                effectProvider = new RealtimeEffectSampleProvider(memoryProvider, audioFile.AudioEffects);
             }
 
-            // Read all samples from the (potentially effected) provider
-            // Determine the total number of samples to read
-            long totalSamplesToRead = audioFile.AudioData.Length; // Correctly get total samples from the source AudioData
-            if (totalSamplesToRead == 0)
-            {
-                // Handle empty audio case after effect chain setup
-                using (var writer = new WaveFileWriter(targetFilePath, waveFormat))
-                {
-                    // Write an empty file if there's no data
-                }
-                System.Diagnostics.Debug.WriteLine($"Exported empty file {audioFile.FileName} to {targetFilePath} as source was empty.");
-                return;
-            }
+            // 流式分块写入，避免一次性分配全部音频内存
+            const int chunkSize = 8192;
+            float[] buffer = new float[chunkSize];
 
-            // Buffer to read into
-            // NAudio's Read method reads samples, not bytes, for ISampleProvider
-            float[] buffer = new float[totalSamplesToRead]; 
-            int samplesRead = effectProvider.Read(buffer, 0, buffer.Length);
-
-            // Use WaveFileWriter instance to write the processed samples
             using (var writer = new WaveFileWriter(targetFilePath, waveFormat))
             {
-                if (samplesRead > 0)
+                int samplesRead;
+                while ((samplesRead = effectProvider.Read(buffer, 0, chunkSize)) > 0)
                 {
                     writer.WriteSamples(buffer, 0, samplesRead);
                 }
             }
+
             System.Diagnostics.Debug.WriteLine($"Exported {audioFile.FileName} with effects to {targetFilePath}");
         });
     }
@@ -482,5 +461,30 @@ public class WaveService : IWaveService
             }
             return cachedPath;
         });
+    }
+
+    /// <summary>
+    /// 释放所有播放器和关联资源。
+    /// </summary>
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        foreach (var kvp in _playerMap)
+        {
+            try
+            {
+                kvp.Value.Stop();
+                kvp.Value.Dispose();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error disposing WaveOutEvent: {ex.Message}");
+            }
+        }
+        _playerMap.Clear();
+        _realtimeProviders.Clear();
+        _memorySourceProviders.Clear();
     }
 }
