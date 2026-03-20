@@ -31,30 +31,63 @@ namespace DAW.Views.Effects
     /// </summary>
     public sealed partial class EffectWindow : Window
     {
-        private AppWindow appWindow;
+        private AppWindow? appWindow;
+        private bool _firstActivation = true;
+
         public EffectWindow(IAudioEffect effect)
         {
             this.InitializeComponent();
             this.ExtendsContentIntoTitleBar = true;
 
-            appWindow = GetAppWindowForCurrentWindow();
+            try
+            {
+                appWindow = GetAppWindowForCurrentWindow();
 
-            OverlappedPresenter presenter = OverlappedPresenter.Create();
-            presenter.IsMinimizable = false;  // 禁用最小化
-            presenter.IsMaximizable = false;  // 禁用最大化
+                OverlappedPresenter presenter = OverlappedPresenter.Create();
+                presenter.IsMinimizable = false;
+                presenter.IsMaximizable = false;
+                appWindow.SetPresenter(presenter);
 
-            appWindow.SetPresenter(presenter);
+                var page = EffectUiFactory.CreateEffectPage(effect);
 
-            SetOwnership(appWindow, App.MainWindow);
+                var width = (int)page.GetDesiredWidth();
+                var height = (int)page.GetDesiredHeight();
+                // 兜底：确保窗口有最小尺寸
+                if (width <= 0) width = 400;
+                if (height <= 0) height = 300;
 
-            var page = EffectUiFactory.CreateEffectPage(effect);
-            appWindow.Resize(new Windows.Graphics.SizeInt32((int)page.GetDesiredWidth(), (int)page.GetDesiredHeight()));
-            this.Content = page;
+                appWindow.Resize(new Windows.Graphics.SizeInt32(width, height));
+                this.Content = page;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error initializing EffectWindow: {ex.Message}");
+            }
 
-            CenterToMainWindow();
+            // 延迟到窗口首次激活后再设置 Owner 和居中，避免 HWND 未就绪的竞态
+            this.Activated += OnFirstActivated;
 
             // 显示窗口
-            appWindow.Show();
+            this.Activate();
+        }
+
+        private void OnFirstActivated(object sender, WindowActivatedEventArgs args)
+        {
+            if (!_firstActivation) return;
+            _firstActivation = false;
+
+            try
+            {
+                if (appWindow != null && App.MainWindow != null)
+                {
+                    SetOwnership(appWindow, App.MainWindow);
+                    CenterToMainWindow();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error setting EffectWindow ownership/position: {ex.Message}");
+            }
         }
 
         private AppWindow GetAppWindowForCurrentWindow()
@@ -66,18 +99,28 @@ namespace DAW.Views.Effects
 
         private void CenterToMainWindow()
         {
-            var mainAppWindow = AppWindow.GetFromWindowId(Win32Interop.GetWindowIdFromWindow(WindowNative.GetWindowHandle(App.MainWindow)));
-            if (mainAppWindow is null) return;
+            if (appWindow == null) return;
 
-            var mainPos = mainAppWindow.Position;
-            var mainSize = mainAppWindow.Size;
+            try
+            {
+                var mainHwnd = WindowNative.GetWindowHandle(App.MainWindow);
+                var mainWindowId = Win32Interop.GetWindowIdFromWindow(mainHwnd);
+                var mainAppWindow = AppWindow.GetFromWindowId(mainWindowId);
+                if (mainAppWindow is null) return;
 
-            var newSize = appWindow.Size;
+                var mainPos = mainAppWindow.Position;
+                var mainSize = mainAppWindow.Size;
+                var newSize = appWindow.Size;
 
-            int centerX = mainPos.X + (mainSize.Width - newSize.Width) / 2;
-            int centerY = mainPos.Y + (mainSize.Height - newSize.Height) / 2;
+                int centerX = mainPos.X + (mainSize.Width - newSize.Width) / 2;
+                int centerY = mainPos.Y + (mainSize.Height - newSize.Height) / 2;
 
-            appWindow.Move(new Windows.Graphics.PointInt32(centerX, centerY));
+                appWindow.Move(new Windows.Graphics.PointInt32(centerX, centerY));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CenterToMainWindow failed: {ex.Message}");
+            }
         }
 
         private static void SetOwnership(AppWindow ownedAppWindow, Window ownerWindow)

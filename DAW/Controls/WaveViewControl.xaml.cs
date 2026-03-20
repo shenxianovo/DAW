@@ -20,18 +20,18 @@ using Microsoft.UI;
 using Microsoft.Graphics.Canvas.Geometry;
 using Microsoft.Graphics.Canvas;
 
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
-
 namespace DAW.Controls
 {
     public sealed partial class WaveViewControl : UserControl
     {
         #region Themes
 
+        // 与 App.xaml ThemeDictionaries 中定义的颜色保持一致
+        private static readonly Color ClearColorLight = Color.FromArgb(0xFF, 0xFA, 0xFA, 0xFA); // #FFFAFAFA
+        private static readonly Color ClearColorDark  = Color.FromArgb(0xFF, 0x20, 0x20, 0x20); // #FF202020
+
         private void OnActualThemeChanged(FrameworkElement sender, object args)
         {
-            // 当主题变化时更新 ClearColor
             UpdateCanvasClearColor(this.ActualTheme);
             PreviewCanvasControl.Invalidate();
             EditorCanvasControl.Invalidate();
@@ -39,10 +39,8 @@ namespace DAW.Controls
 
         private void UpdateCanvasClearColor(ElementTheme theme)
         {
-            // 根据当前主题设置 ClearColor
-            var isDarkTheme = theme == ElementTheme.Dark;
-            var clearColor = isDarkTheme ? Colors.Black : Colors.White;
-
+            // ActualTheme 只会返回 Light 或 Dark，不会返回 Default
+            var clearColor = theme == ElementTheme.Dark ? ClearColorDark : ClearColorLight;
             PreviewCanvasControl.ClearColor = clearColor;
             EditorCanvasControl.ClearColor = clearColor;
         }
@@ -101,7 +99,7 @@ namespace DAW.Controls
                 nameof(VisibleLeftFrame),
                 typeof(long),
                 typeof(WaveViewControl),
-                new PropertyMetadata(0L, OnBoundsChanged));
+                new PropertyMetadata(0L, OnVisibleRangeChanged));
 
         public long VisibleRightFrame
         {
@@ -114,7 +112,7 @@ namespace DAW.Controls
                 nameof(VisibleRightFrame),
                 typeof(long),
                 typeof(WaveViewControl),
-                new PropertyMetadata(0L, OnBoundsChanged));
+                new PropertyMetadata(0L, OnVisibleRangeChanged));
 
         public long SelectedLeftSample
         {
@@ -127,7 +125,7 @@ namespace DAW.Controls
                 nameof(SelectedLeftSample),
                 typeof(long),
                 typeof(WaveViewControl),
-                new PropertyMetadata(0L, OnBoundsChanged));
+                new PropertyMetadata(0L, OnOverlayChanged));
 
         public long SelectedRightSample
         {
@@ -140,7 +138,7 @@ namespace DAW.Controls
                 nameof(SelectedRightSample),
                 typeof(long),
                 typeof(WaveViewControl),
-                new PropertyMetadata(0L, OnBoundsChanged));
+                new PropertyMetadata(0L, OnOverlayChanged));
 
         public long PlaybackPositionSample
         {
@@ -153,11 +151,11 @@ namespace DAW.Controls
                 nameof(PlaybackPositionSample),
                 typeof(long),
                 typeof(WaveViewControl),
-                new PropertyMetadata(0L, OnBoundsChanged));
+                new PropertyMetadata(0L, OnOverlayChanged));
 
         #endregion
 
-        #region Events
+        #region Property Change Callbacks
 
         private static void OnAudioDataChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -165,20 +163,54 @@ namespace DAW.Controls
             {
                 control._previewPeakArrays = null;
                 control._editorPeakArrays = null;
+                control._previewGeometryDirty = true;
+                control._editorGeometryDirty = true;
                 control.PreviewCanvasControl.Invalidate();
                 control.EditorCanvasControl.Invalidate();
-                //control.MelSpectrogramCanvasControl.Invalidate();
             }
         }
 
-        private static void OnBoundsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        /// <summary>
+        /// 可见帧范围改变  Editor 波形几何体需要重建
+        /// </summary>
+        private static void OnVisibleRangeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is WaveViewControl control)
+            {
+                control._editorGeometryDirty = true;
+                control.PreviewCanvasControl.Invalidate();
+                control.EditorCanvasControl.Invalidate();
+            }
+        }
+
+        /// <summary>
+        /// 选区 / 播放位置改变  只需重绘覆盖层线条，波形几何体不变
+        /// </summary>
+        private static void OnOverlayChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is WaveViewControl control)
             {
                 control.PreviewCanvasControl.Invalidate();
                 control.EditorCanvasControl.Invalidate();
-                //control.MelSpectrogramCanvasControl.Invalidate();
             }
+        }
+
+        #endregion
+
+        #region Geometry Caching
+
+        private CanvasGeometry? _previewWaveGeometry;
+        private bool _previewGeometryDirty = true;
+
+        private CanvasGeometry? _editorWaveGeometry;
+        private bool _editorGeometryDirty = true;
+
+        private void DisposeGeometryCache()
+        {
+            _previewWaveGeometry?.Dispose();
+            _previewWaveGeometry = null;
+            _editorWaveGeometry?.Dispose();
+            _editorWaveGeometry = null;
         }
 
         #endregion
@@ -187,11 +219,25 @@ namespace DAW.Controls
         {
             this.InitializeComponent();
 
-            // 监听控件的主题变化
+            // 主题
             this.ActualThemeChanged += OnActualThemeChanged;
+            this.Loaded += (s, e) => UpdateCanvasClearColor(this.ActualTheme);
 
-            // 初始化 ClearColor
-            UpdateCanvasClearColor(this.ActualTheme);
+            // Canvas 尺寸变化时使缓存失效
+            PreviewCanvasControl.SizeChanged += (s, e) =>
+            {
+                _previewPeakArrays = null;
+                _previewGeometryDirty = true;
+                PreviewCanvasControl.Invalidate();
+            };
+            EditorCanvasControl.SizeChanged += (s, e) =>
+            {
+                _editorGeometryDirty = true;
+                EditorCanvasControl.Invalidate();
+            };
+
+            // 释放 GPU 几何资源
+            this.Unloaded += (s, e) => DisposeGeometryCache();
         }
 
         #region Wave Preview
@@ -202,12 +248,12 @@ namespace DAW.Controls
 
         private bool _isDraggingLeft;
         private bool _isDraggingRight;
-        private float _dragOffset; // 记录拖动时指针与线位置的偏移
+        private float _dragOffset;
 
-        private bool _isDraggingRange;           // 是否正在整体拖拽可见区
-        private float _dragRangeStartX;          // 鼠标按下时初始 X
-        private long _panStartLeftSample;        // 鼠标按下时记录的 VisibleLeftFrame
-        private long _panStartRightSample;       // 鼠标按下时记录的 VisibleRightFrame
+        private bool _isDraggingRange;
+        private float _dragRangeStartX;
+        private long _panStartLeftSample;
+        private long _panStartRightSample;
 
         #endregion
 
@@ -229,32 +275,24 @@ namespace DAW.Controls
             float vRightX = VisibleRightFrame * pxPerSample;
             if (vRightX < vLeftX) (vLeftX, vRightX) = (vRightX, vLeftX);
 
-            // 允许 5 像素左右的可点击范围
             const float grabZone = 5f;
 
-            // 判断是否单纯拖动左边界
             if (Math.Abs(x - vLeftX) <= grabZone)
             {
                 _isDraggingLeft = true;
                 _dragOffset = x - vLeftX;
             }
-            // 判断是否单纯拖动右边界
             else if (Math.Abs(x - vRightX) <= grabZone)
             {
                 _isDraggingRight = true;
                 _dragOffset = x - vRightX;
             }
-            else
+            else if (x > vLeftX + grabZone && x < vRightX - grabZone)
             {
-                // 如果鼠标落在可见区域中间，则进行整体平移
-                if (x > vLeftX + grabZone && x < vRightX - grabZone)
-                {
-                    _isDraggingRange = true;
-                    _dragRangeStartX = x;
-                    // 记录当前可见区初始位置
-                    _panStartLeftSample = VisibleLeftFrame;
-                    _panStartRightSample = VisibleRightFrame;
-                }
+                _isDraggingRange = true;
+                _dragRangeStartX = x;
+                _panStartLeftSample = VisibleLeftFrame;
+                _panStartRightSample = VisibleRightFrame;
             }
         }
 
@@ -283,18 +321,14 @@ namespace DAW.Controls
             }
             else if (_isDraggingRange)
             {
-                // 整体平移
-                float deltaX = x - _dragRangeStartX; // 鼠标移动的像素距离
+                float deltaX = x - _dragRangeStartX;
                 long deltaSamples = (long)Math.Round(deltaX / pxPerSample);
 
                 long newLeft = _panStartLeftSample + deltaSamples;
                 long newRight = _panStartRightSample + deltaSamples;
 
-                // 约束在 [0, totalSamples-1]
-                long length = _panStartRightSample - _panStartLeftSample;
-                if (length < 0) length *= -1; // 保证为正数
+                long length = Math.Abs(_panStartRightSample - _panStartLeftSample);
 
-                // 确保新的可见范围在合法区间内
                 if (newLeft < 0)
                 {
                     newLeft = 0;
@@ -304,7 +338,7 @@ namespace DAW.Controls
                 {
                     newRight = totalSamples - 1;
                     newLeft = newRight - length;
-                    if (newLeft < 0) newLeft = 0; // 再次约束
+                    if (newLeft < 0) newLeft = 0;
                 }
 
                 VisibleLeftFrame = newLeft;
@@ -329,103 +363,103 @@ namespace DAW.Controls
 
         private void WavePreview_Draw(CanvasControl sender, CanvasDrawEventArgs args)
         {
-            // If no data or channel count is invalid, skip drawing
             if (AudioData == null || AudioData.Length < 1 || Channels < 1) return;
 
-            // Lazy-load peak arrays
+            // 延迟生成峰值数组（仅在数据变化或 Canvas 大小变化时重建）
             if (_previewPeakArrays == null)
             {
-                int samplesPerPeak = (int)(AudioData.Length / sender.ActualWidth);
+                int samplesPerPeak = Math.Max(1, (int)(AudioData.Length / sender.ActualWidth));
                 _previewPeakArrays = WaveDataHelper.GeneratePeakArrays(AudioData, Channels, samplesPerPeak);
+                _previewGeometryDirty = true;
             }
 
-            WavePreview_DrawWave(sender, args);
+            var ds = args.DrawingSession;
+            float canvasWidth = (float)sender.ActualWidth;
+            float canvasHeight = (float)sender.ActualHeight;
+            if (canvasWidth <= 0 || canvasHeight <= 0) return;
+
+            //  只在数据/尺寸变化时重建波形几何体，播放位置变化时直接复用
+            if (_previewGeometryDirty || _previewWaveGeometry == null)
+            {
+                _previewWaveGeometry?.Dispose();
+                _previewWaveGeometry = BuildPreviewWaveGeometry(sender, canvasWidth, canvasHeight);
+                _previewGeometryDirty = false;
+            }
+
+            if (_previewWaveGeometry != null)
+            {
+                ds.FillGeometry(_previewWaveGeometry, Colors.SkyBlue);
+            }
+
+            // 覆盖层（边界线、选区、播放位置）开销很小
             WavePreview_DrawBoundaries(sender, args);
         }
 
         #region Wave Preview Helpers
 
-        private void WavePreview_DrawWave(CanvasControl sender, CanvasDrawEventArgs args)
+        /// <summary>
+        /// 构建预览波形的缓存几何体（所有声道合并到一个 Path）
+        /// </summary>
+        private CanvasGeometry? BuildPreviewWaveGeometry(
+            ICanvasResourceCreator creator, float canvasWidth, float canvasHeight)
         {
-            var ds = args.DrawingSession;
-            float canvasWidth = (float)sender.ActualWidth;
-            float canvasHeight = (float)sender.ActualHeight;
-            if (canvasWidth <= 0 || canvasHeight <= 0 || _previewPeakArrays == null) return;
+            if (_previewPeakArrays == null) return null;
 
-            // Spacing of 5px between channels
             float spacing = 5f;
             float totalSpacing = (Channels - 1) * spacing;
             float availableHeight = canvasHeight - totalSpacing;
-            if (availableHeight <= 0) return;
+            if (availableHeight <= 0) return null;
 
             float channelHeight = availableHeight / Channels;
+            int canvasWidthInt = (int)canvasWidth;
+            if (canvasWidthInt <= 0) return null;
 
-            // Draw each channel
+            using var pathBuilder = new CanvasPathBuilder(creator);
+
             for (int ch = 0; ch < Channels; ch++)
             {
                 float[] channelPeaks = _previewPeakArrays[ch];
                 if (channelPeaks.Length < 2) continue;
 
-                // Calculate vertical offset for current channel
                 float offsetY = ch * (channelHeight + spacing);
-                DrawChannelWave(ds, channelPeaks, canvasWidth, channelHeight, offsetY);
-            }
-        }
+                float verticalCenter = offsetY + channelHeight / 2;
+                int totalPairs = channelPeaks.Length / 2;
+                float samplesPerPixel = (float)totalPairs / canvasWidthInt;
 
-        private void DrawChannelWave(Microsoft.Graphics.Canvas.CanvasDrawingSession ds,
-                float[] channelPeaks,
-                float canvasWidth,
-                float channelHeight,
-                float offsetY)
-        {
-            float verticalCenter = offsetY + channelHeight / 2;
+                // 使用预分配数组代替 List<Vector2>
+                var topY = new float[canvasWidthInt];
+                var bottomY = new float[canvasWidthInt];
 
-            using var pathBuilder = new CanvasPathBuilder(ds);
-            var topPoints = new List<Vector2>();
-            var bottomPoints = new List<Vector2>();
-
-            int canvasWidthInt = (int)canvasWidth;
-            int totalPairs = channelPeaks.Length / 2;
-            float samplesPerPixel = (float)totalPairs / canvasWidthInt;
-
-            for (int x = 0; x < canvasWidthInt; x++)
-            {
-                int start = (int)(x * samplesPerPixel);
-                int end = (int)((x + 1) * samplesPerPixel);
-                if (end >= totalPairs) end = totalPairs - 1;
-
-                float minVal = float.MaxValue;
-                float maxVal = float.MinValue;
-                for (int i = start; i <= end; i++)
+                for (int x = 0; x < canvasWidthInt; x++)
                 {
-                    float localMin = channelPeaks[i * 2];
-                    float localMax = channelPeaks[i * 2 + 1];
-                    if (localMin < minVal) minVal = localMin;
-                    if (localMax > maxVal) maxVal = localMax;
+                    int start = (int)(x * samplesPerPixel);
+                    int end = (int)((x + 1) * samplesPerPixel);
+                    if (end >= totalPairs) end = totalPairs - 1;
+
+                    float minVal = float.MaxValue;
+                    float maxVal = float.MinValue;
+                    for (int i = start; i <= end; i++)
+                    {
+                        float localMin = channelPeaks[i * 2];
+                        float localMax = channelPeaks[i * 2 + 1];
+                        if (localMin < minVal) minVal = localMin;
+                        if (localMax > maxVal) maxVal = localMax;
+                    }
+
+                    topY[x] = verticalCenter - maxVal * (channelHeight / 2);
+                    bottomY[x] = verticalCenter - minVal * (channelHeight / 2);
                 }
 
-                float yMin = verticalCenter - minVal * (channelHeight / 2);
-                float yMax = verticalCenter - maxVal * (channelHeight / 2);
-                topPoints.Add(new Vector2(x, yMax));
-                bottomPoints.Add(new Vector2(x, yMin));
-            }
-
-            if (topPoints.Count > 0)
-            {
-                pathBuilder.BeginFigure(topPoints[0]);
-                for (int i = 1; i < topPoints.Count; i++)
-                {
-                    pathBuilder.AddLine(topPoints[i]);
-                }
-                for (int i = bottomPoints.Count - 1; i >= 0; i--)
-                {
-                    pathBuilder.AddLine(bottomPoints[i]);
-                }
+                // 闭合图形：上沿正向，下沿反向
+                pathBuilder.BeginFigure(new Vector2(0, topY[0]));
+                for (int x = 1; x < canvasWidthInt; x++)
+                    pathBuilder.AddLine(new Vector2(x, topY[x]));
+                for (int x = canvasWidthInt - 1; x >= 0; x--)
+                    pathBuilder.AddLine(new Vector2(x, bottomY[x]));
                 pathBuilder.EndFigure(CanvasFigureLoop.Closed);
             }
 
-            using var geometry = CanvasGeometry.CreatePath(pathBuilder);
-            ds.FillGeometry(geometry, Colors.SkyBlue);
+            return CanvasGeometry.CreatePath(pathBuilder);
         }
 
         private void WavePreview_DrawBoundaries(CanvasControl sender, CanvasDrawEventArgs args)
@@ -442,18 +476,14 @@ namespace DAW.Controls
 
             float pxPerSample = canvasWidth / totalSamples;
 
-            // --- Visible range lines ---
             float vLeftX = VisibleLeftFrame * pxPerSample;
             float vRightX = VisibleRightFrame * pxPerSample;
             if (vRightX < vLeftX) (vLeftX, vRightX) = (vRightX, vLeftX);
 
             ds.DrawLine(vLeftX, 0, vLeftX, canvasHeight, Colors.Gray);
             ds.DrawLine(vRightX, 0, vRightX, canvasHeight, Colors.Gray);
-
-            // Optional: fill the visible region if desired
             ds.FillRectangle(vLeftX, 0, vRightX - vLeftX, canvasHeight, Color.FromArgb(30, 0, 0, 0));
 
-            // --- Selected range lines + semi-transparent fill ---
             float sLeftX = SelectedLeftSample * pxPerSample;
             float sRightX = SelectedRightSample * pxPerSample;
             if (sRightX < sLeftX) (sLeftX, sRightX) = (sRightX, sLeftX);
@@ -461,18 +491,14 @@ namespace DAW.Controls
             ds.DrawLine(sLeftX, 0, sLeftX, canvasHeight, Colors.Red);
             ds.DrawLine(sRightX, 0, sRightX, canvasHeight, Colors.Red);
 
-            // Fill selection area with semi-transparency
             if (sRightX > sLeftX)
-            {
                 ds.FillRectangle(sLeftX, 0, sRightX - sLeftX, canvasHeight, Color.FromArgb(60, 0, 120, 215));
-            }
 
             float progressX = PlaybackPositionSample * pxPerSample;
             ds.DrawLine(progressX, 0, progressX, canvasHeight, Colors.Red);
         }
 
         #endregion
-
 
         #endregion
 
@@ -483,6 +509,7 @@ namespace DAW.Controls
         private float _resolution;
 
         private float[][]? _editorPeakArrays;
+
         private void EditorCanvasControl_Draw(CanvasControl sender, CanvasDrawEventArgs args)
         {
             if (AudioData == null || AudioData.Length < 1 || Channels < 1) return;
@@ -494,39 +521,45 @@ namespace DAW.Controls
             float canvasHeight = (float)sender.ActualHeight;
             if (canvasWidth <= 0 || canvasHeight <= 0) return;
 
-            // 1. 绘制可见范围内的波形子集
-            DrawEditorWave(ds, canvasWidth, canvasHeight);
+            //  只在可见范围 / 分辨率 / 数据变化时重建，播放期间直接复用
+            if (_editorGeometryDirty || _editorWaveGeometry == null)
+            {
+                _editorWaveGeometry?.Dispose();
+                bool useFill = (_resolution < 8f);
+                _editorWaveGeometry = BuildEditorWaveGeometry(sender, canvasWidth, canvasHeight, useFill);
+                _editorGeometryDirty = false;
+            }
 
-            // 2. 绘制选中区域
-            float pxPerSample = canvasWidth / (VisibleRightFrame - VisibleLeftFrame + 1);
-            float sLeftX = (SelectedLeftSample - VisibleLeftFrame) * pxPerSample;
-            float sRightX = (SelectedRightSample - VisibleLeftFrame) * pxPerSample;
-            if (sRightX < sLeftX) (sLeftX, sRightX) = (sRightX, sLeftX);
+            if (_editorWaveGeometry != null)
+            {
+                bool useFill = (_resolution < 8f);
+                if (useFill)
+                    ds.FillGeometry(_editorWaveGeometry, Colors.MediumAquamarine);
+                else
+                    ds.DrawGeometry(_editorWaveGeometry, Colors.MediumAquamarine, 1f);
+            }
 
-            ds.DrawLine(sLeftX, 0, sLeftX, canvasHeight, Colors.Orange);
-            ds.DrawLine(sRightX, 0, sRightX, canvasHeight, Colors.Orange);
-            ds.FillRectangle(sLeftX, 0, sRightX - sLeftX, canvasHeight, Color.FromArgb(100, 255, 165, 0));
-
-            // 3. 绘制播放进度线
-            float progressX = (PlaybackPositionSample - VisibleLeftFrame) * pxPerSample;
-            ds.DrawLine(progressX, 0, progressX, canvasHeight, Colors.Red);
+            // 覆盖层
+            DrawEditorOverlays(ds, canvasWidth, canvasHeight);
         }
 
+        /// <summary>
+        /// 按需生成编辑器峰值数组。
+        /// 修复：统一使用 total/visible 作为分辨率指标，并使用容差避免浮点比较问题。
+        /// </summary>
         private void GenerateEditorPeakArraysIfNeeded()
         {
-            if (_editorPeakArrays == null)
-            {
-                _editorPeakArrays = WaveDataHelper.GeneratePeakArrays(AudioData, Channels, 2048);
-                _resolution = (VisibleRightFrame - VisibleLeftFrame + 1) / (AudioData.Length / Channels);
-                return;
-            }
+            if (AudioData == null || Channels <= 0) return;
 
             var visibleLength = (float)(VisibleRightFrame - VisibleLeftFrame + 1);
             var totalLength = (float)(AudioData.Length / Channels);
+            if (visibleLength <= 0 || totalLength <= 0) return;
 
             var currentResolution = (float)Math.Round(totalLength / visibleLength);
 
-            if (_resolution == currentResolution) return;
+            // 使用容差比较，避免每帧重新生成
+            if (_editorPeakArrays != null && Math.Abs(_resolution - currentResolution) < 0.5f)
+                return;
 
             _resolution = currentResolution;
             int blockSize = _resolution switch
@@ -537,24 +570,31 @@ namespace DAW.Controls
                 _ => 1
             };
 
-            // 根据新的 blockSize 重新生成可见区的数据或全量数据
             _editorPeakArrays = WaveDataHelper.GeneratePeakArrays(AudioData, Channels, blockSize);
+            _editorGeometryDirty = true;
         }
 
-        private void DrawEditorWave(Microsoft.Graphics.Canvas.CanvasDrawingSession ds,
-                                    float canvasWidth,
-                                    float canvasHeight)
+        /// <summary>
+        /// 构建编辑器波形的缓存几何体
+        /// </summary>
+        private CanvasGeometry? BuildEditorWaveGeometry(
+            ICanvasResourceCreator creator, float canvasWidth, float canvasHeight, bool useFill)
         {
+            if (_editorPeakArrays == null) return null;
+
             float spacing = 5f;
             float totalSpacing = (Channels - 1) * spacing;
             float availableHeight = canvasHeight - totalSpacing;
-            if (availableHeight <= 0) return;
+            if (availableHeight <= 0) return null;
 
             float channelHeight = availableHeight / Channels;
             long visibleLength = VisibleRightFrame - VisibleLeftFrame + 1;
-            if (visibleLength <= 1) return;
+            if (visibleLength <= 1) return null;
 
-            bool useFill = (_resolution < 8f);
+            int canvasWidthInt = (int)canvasWidth;
+            if (canvasWidthInt <= 0) return null;
+
+            using var pathBuilder = new CanvasPathBuilder(creator);
 
             for (int ch = 0; ch < Channels; ch++)
             {
@@ -562,98 +602,92 @@ namespace DAW.Controls
                 if (peaks.Length < 2) continue;
 
                 float offsetY = ch * (channelHeight + spacing);
+                float vCenter = offsetY + channelHeight / 2;
+                int totalPairs = peaks.Length / 2;
+                float samplesPerPixel = (float)visibleLength / canvasWidthInt;
+                long totalFrames = AudioData.Length / Channels;
 
-                if (useFill) // 填充
-                    DrawEditorWave_Fill(ds, peaks, canvasWidth, channelHeight, offsetY);
-                else // 连线
-                    DrawEditorWave_Line(ds, peaks, canvasWidth, channelHeight, offsetY);
+                if (useFill)
+                {
+                    var topY = new float[canvasWidthInt];
+                    var bottomY = new float[canvasWidthInt];
+
+                    for (int x = 0; x < canvasWidthInt; x++)
+                    {
+                        long sampleIndex = VisibleLeftFrame + (long)(x * samplesPerPixel);
+                        long pairIndex = totalFrames > 0
+                            ? sampleIndex * totalPairs / totalFrames
+                            : 0;
+                        pairIndex = Math.Clamp(pairIndex, 0, totalPairs - 1);
+
+                        float localMin = peaks[pairIndex * 2];
+                        float localMax = peaks[pairIndex * 2 + 1];
+
+                        topY[x] = vCenter - localMax * (channelHeight / 2);
+                        bottomY[x] = vCenter - localMin * (channelHeight / 2);
+                    }
+
+                    pathBuilder.BeginFigure(new Vector2(0, topY[0]));
+                    for (int x = 1; x < canvasWidthInt; x++)
+                        pathBuilder.AddLine(new Vector2(x, topY[x]));
+                    for (int x = canvasWidthInt - 1; x >= 0; x--)
+                        pathBuilder.AddLine(new Vector2(x, bottomY[x]));
+                    pathBuilder.EndFigure(CanvasFigureLoop.Closed);
+                }
+                else
+                {
+                    bool started = false;
+                    for (int x = 0; x < canvasWidthInt; x++)
+                    {
+                        long sampleIndex = VisibleLeftFrame + (long)(x * samplesPerPixel);
+                        long pairIndex = totalFrames > 0
+                            ? sampleIndex * totalPairs / totalFrames
+                            : 0;
+                        pairIndex = Math.Clamp(pairIndex, 0, totalPairs - 1);
+
+                        float localMin = peaks[pairIndex * 2];
+                        float localMax = peaks[pairIndex * 2 + 1];
+                        float avgVal = (localMin + localMax) / 2;
+                        float y = vCenter - avgVal * (channelHeight / 2);
+
+                        if (!started)
+                        {
+                            pathBuilder.BeginFigure(new Vector2(x, y));
+                            started = true;
+                        }
+                        else
+                        {
+                            pathBuilder.AddLine(new Vector2(x, y));
+                        }
+                    }
+                    if (started)
+                        pathBuilder.EndFigure(CanvasFigureLoop.Open);
+                }
             }
+
+            return CanvasGeometry.CreatePath(pathBuilder);
         }
 
-        private void DrawEditorWave_Fill(
-            Microsoft.Graphics.Canvas.CanvasDrawingSession ds,
-            float[] channelPeaks,
-            float canvasWidth,
-            float channelHeight,
-            float offsetY)
+        /// <summary>
+        /// 绘制编辑器覆盖层（选区 + 播放位置线）
+        /// </summary>
+        private void DrawEditorOverlays(CanvasDrawingSession ds, float canvasWidth, float canvasHeight)
         {
             long visibleLength = VisibleRightFrame - VisibleLeftFrame + 1;
-            int totalPairs = channelPeaks.Length / 2;
-            float samplesPerPixel = (float)visibleLength / canvasWidth;
-            float vCenter = offsetY + channelHeight / 2;
+            if (visibleLength <= 0) return;
 
-            using var pathBuilder = new CanvasPathBuilder(ds);
-            var topPoints = new List<Vector2>();
-            var bottomPoints = new List<Vector2>();
+            float pxPerSample = canvasWidth / visibleLength;
 
-            for (int x = 0; x < (int)canvasWidth; x++)
-            {
-                long sampleIndex = VisibleLeftFrame + (long)(x * samplesPerPixel);
-                long pairIndex = sampleIndex * totalPairs / (AudioData.Length / Channels);
-                pairIndex = Math.Clamp(pairIndex, 0, totalPairs - 1);
+            float sLeftX = (SelectedLeftSample - VisibleLeftFrame) * pxPerSample;
+            float sRightX = (SelectedRightSample - VisibleLeftFrame) * pxPerSample;
+            if (sRightX < sLeftX) (sLeftX, sRightX) = (sRightX, sLeftX);
 
-                float localMin = channelPeaks[pairIndex * 2];
-                float localMax = channelPeaks[pairIndex * 2 + 1];
+            ds.DrawLine(sLeftX, 0, sLeftX, canvasHeight, Colors.Orange);
+            ds.DrawLine(sRightX, 0, sRightX, canvasHeight, Colors.Orange);
+            ds.FillRectangle(sLeftX, 0, sRightX - sLeftX, canvasHeight, Color.FromArgb(100, 255, 165, 0));
 
-                float yMin = vCenter - localMin * (channelHeight / 2);
-                float yMax = vCenter - localMax * (channelHeight / 2);
-                topPoints.Add(new Vector2(x, yMax));
-                bottomPoints.Add(new Vector2(x, yMin));
-            }
-
-            if (topPoints.Count > 0)
-            {
-                pathBuilder.BeginFigure(topPoints[0]);
-                for (int i = 1; i < topPoints.Count; i++)
-                {
-                    pathBuilder.AddLine(topPoints[i]);
-                }
-                for (int i = bottomPoints.Count - 1; i >= 0; i--)
-                {
-                    pathBuilder.AddLine(bottomPoints[i]);
-                }
-                pathBuilder.EndFigure(CanvasFigureLoop.Closed);
-            }
-
-            using var geometry = CanvasGeometry.CreatePath(pathBuilder);
-            ds.FillGeometry(geometry, Colors.MediumAquamarine);
-        }
-
-        private void DrawEditorWave_Line(
-            Microsoft.Graphics.Canvas.CanvasDrawingSession ds,
-            float[] channelPeaks,
-            float canvasWidth,
-            float channelHeight,
-            float offsetY)
-        {
-            long visibleLength = VisibleRightFrame - VisibleLeftFrame + 1;
-            int totalPairs = channelPeaks.Length / 2;
-            float samplesPerPixel = (float)visibleLength / canvasWidth;
-            float vCenter = offsetY + channelHeight / 2;
-
-            var linePoints = new List<Vector2>();
-
-            for (int x = 0; x < (int)canvasWidth; x++)
-            {
-                long sampleIndex = VisibleLeftFrame + (long)(x * samplesPerPixel);
-                long pairIndex = sampleIndex * totalPairs / (AudioData.Length / Channels);
-                pairIndex = Math.Clamp(pairIndex, 0, totalPairs - 1);
-
-                float localMin = channelPeaks[pairIndex * 2];
-                float localMax = channelPeaks[pairIndex * 2 + 1];
-                float avgVal = (localMin + localMax) / 2;
-
-                float y = vCenter - avgVal * (channelHeight / 2);
-                linePoints.Add(new Vector2(x, y));
-            }
-
-            if (linePoints.Count > 1)
-            {
-                for (int i = 0; i < linePoints.Count - 1; i++)
-                {
-                    ds.DrawLine(linePoints[i], linePoints[i + 1], Colors.MediumAquamarine, 1f);
-                }
-            }
+            float progressX = (PlaybackPositionSample - VisibleLeftFrame) * pxPerSample;
+            ds.DrawLine(progressX, 0, progressX, canvasHeight, Colors.Red);
         }
 
         #region Wave Editor Events
@@ -663,20 +697,17 @@ namespace DAW.Controls
             if (AudioData == null || AudioData.Length < 1 || Channels < 1) return;
 
             var point = e.GetCurrentPoint(EditorCanvasControl);
-
             _isSelecting = true;
             _editorPointerDownX = (float)point.Position.X;
         }
 
         private void OnEditorCanvasPointerMoved(object sender, PointerRoutedEventArgs e)
         {
-            // 若不移动超过一定像素，就视为单击而非拖拽
             if (!_isSelecting || AudioData == null) return;
 
             float movedDistance = Math.Abs((float)e.GetCurrentPoint(EditorCanvasControl).Position.X - _editorPointerDownX);
-            if (movedDistance > 5f) // 超过5像素才算拖拽
+            if (movedDistance > 5f)
             {
-                // 若确定是拖拽，则执行原先的选区逻辑
                 float canvasWidth = (float)EditorCanvasControl.ActualWidth;
                 long visibleLen = VisibleRightFrame - VisibleLeftFrame + 1;
                 if (canvasWidth <= 0 || visibleLen <= 0) return;
@@ -701,7 +732,6 @@ namespace DAW.Controls
 
         private void OnEditorCanvasPointerReleased(object sender, PointerRoutedEventArgs e)
         {
-            // 如果鼠标没有明显拖拽，则当作单击，更新播放位置
             float movedDistance = Math.Abs((float)e.GetCurrentPoint(EditorCanvasControl).Position.X - _editorPointerDownX);
             if (movedDistance <= 5f && AudioData != null && Channels > 0)
             {
@@ -721,232 +751,8 @@ namespace DAW.Controls
             _isSelecting = false;
         }
 
-
         #endregion
 
         #endregion
-
-        //#region Mel Spectrogram
-
-        //private float[][]? _melSpectrogramData;
-
-        //private void BuildMelSpectrogramIfNeeded()
-        //{
-        //    // 若已计算过，不再重复
-        //    if (_melSpectrogramData != null) return;
-
-        //    if (AudioData == null || AudioData.Length == 0) return;
-
-        //    // 假设只用单声道进行计算，若多声道可自行混合或选择一个声道
-        //    // 这里以 Channels 的第一个声道为例
-        //    int totalSamples = AudioData.Length / Math.Max(Channels, 1);
-        //    // fftSize / hopSize / melBins 可根据需求调整
-        //    int fftSize = 1024;
-        //    int hopSize = 512;
-        //    int melBins = 64;
-
-        //    // 简单示例：若多声道，先取第一个声道的数据
-        //    float[] monoData = new float[totalSamples];
-        //    for (int i = 0; i < totalSamples; i++)
-        //    {
-        //        monoData[i] = AudioData[i * Channels];
-        //    }
-
-        //    // 计算 Mel 频谱矩阵
-        //    _melSpectrogramData = ComputeMelSpectrogram(monoData, SampleRate, fftSize, hopSize, melBins);
-        //}
-
-        //private float[][] ComputeMelSpectrogram(
-        //    float[] audioData,
-        //    int sampleRate,
-        //    int fftSize,
-        //    int hopSize,
-        //    int melBins)
-        //{
-        //    // 1. 计算帧数
-        //    int frameCount = (audioData.Length - fftSize) / hopSize + 1;
-        //    if (frameCount < 1) return new float[0][];
-
-        //    // 准备返回的 Mel 频谱矩阵
-        //    float[][] melSpectrogram = new float[frameCount][];
-        //    for (int i = 0; i < frameCount; i++)
-        //    {
-        //        melSpectrogram[i] = new float[melBins];
-        //    }
-
-        //    // 2. 构建 Mel 滤波器组
-        //    int specSize = fftSize / 2 + 1; // 频谱的有效频率点数
-        //    float[][] melFilters = BuildMelFilterBank(sampleRate, fftSize, melBins);
-
-        //    // 3. 分帧 + STFT + 应用 Mel 滤波器
-        //    for (int frame = 0; frame < frameCount; frame++)
-        //    {
-        //        int startPos = frame * hopSize;
-
-        //        // 提取一帧并加窗（汉宁窗）
-        //        float[] windowed = new float[fftSize];
-        //        for (int n = 0; n < fftSize; n++)
-        //        {
-        //            if (startPos + n < audioData.Length)
-        //            {
-        //                float window = 0.5f - 0.5f * (float)Math.Cos(2.0 * Math.PI * n / (fftSize - 1));
-        //                windowed[n] = audioData[startPos + n] * window;
-        //            }
-        //        }
-
-        //        // 执行 FFT
-        //        Complex[] freqDomain = Fft(windowed);
-        //        float[] magSpectrum = new float[specSize];
-
-        //        // 只取前半部分频谱的幅度
-        //        for (int k = 0; k < specSize; k++)
-        //        {
-        //            magSpectrum[k] = (float)freqDomain[k].Magnitude;
-        //        }
-
-        //        // 4. 将幅度谱与 Mel 滤波器相乘并取对数
-        //        for (int m = 0; m < melBins; m++)
-        //        {
-        //            float sum = 0f;
-        //            for (int k = 0; k < specSize; k++) // 确保索引范围一致
-        //            {
-        //                sum += melFilters[m][k] * magSpectrum[k];
-        //            }
-        //            // 对数缩放 + 避免 log(0)
-        //            melSpectrogram[frame][m] = (float)Math.Log10(Math.Max(sum, 1e-6));
-        //        }
-        //    }
-
-        //    return melSpectrogram;
-        //}
-
-
-        //private float[][] BuildMelFilterBank(int sampleRate, int fftSize, int melBins)
-        //{
-        //    int specSize = fftSize / 2 + 1;
-        //    float[][] filters = new float[melBins][];
-        //    for (int m = 0; m < melBins; m++)
-        //    {
-        //        filters[m] = new float[specSize];
-        //    }
-        //    // 简易实现：按 melBins 均分频率段并填充 1/0
-        //    // 实际应用应使用三角通带、mel 频率公式等
-        //    for (int m = 0; m < melBins; m++)
-        //    {
-        //        int startBin = (int)(m * (specSize / (float)melBins));
-        //        int endBin = (int)((m + 1) * (specSize / (float)melBins));
-        //        for (int k = startBin; k < endBin && k < specSize; k++)
-        //        {
-        //            filters[m][k] = 1f;
-        //        }
-        //    }
-        //    return filters;
-        //}
-
-        //private Complex[] Fft(float[] timeData)
-        //{
-        //    int N = timeData.Length;
-        //    Complex[] buffer = new Complex[N];
-        //    for (int i = 0; i < N; i++)
-        //    {
-        //        buffer[i] = new Complex(timeData[i], 0);
-        //    }
-
-        //    // Cooley–Tukey FFT（递归或迭代版均可）
-        //    // 这里演示迭代实现
-        //    int bits = (int)Math.Log2(N);
-        //    // Bit-reversal
-        //    for (int i = 1, j = 0; i < N; i++)
-        //    {
-        //        int bit = N >> 1;
-        //        for (; j >= bit; bit >>= 1)
-        //        {
-        //            j -= bit;
-        //        }
-        //        j += bit;
-        //        if (i < j)
-        //        {
-        //            (buffer[i], buffer[j]) = (buffer[j], buffer[i]);
-        //        }
-        //    }
-        //    // butterfly
-        //    for (int len = 2; len <= N; len <<= 1)
-        //    {
-        //        double angle = 2 * Math.PI / len;
-        //        Complex wlen = new Complex(Math.Cos(angle), Math.Sin(angle));
-        //        for (int i = 0; i < N; i += len)
-        //        {
-        //            Complex w = Complex.One;
-        //            for (int k = 0; k < len / 2; k++)
-        //            {
-        //                Complex u = buffer[i + k];
-        //                Complex v = buffer[i + k + len / 2] * w;
-        //                buffer[i + k] = u + v;
-        //                buffer[i + k + len / 2] = u - v;
-        //                w *= wlen;
-        //            }
-        //        }
-        //    }
-        //    return buffer;
-        //}
-
-        //private void MelSpectrogramCanvasControl_Draw(CanvasControl sender, CanvasDrawEventArgs args)
-        //{
-        //    // 若尚未计算 Mel 频谱，则进行计算
-        //    BuildMelSpectrogramIfNeeded();
-        //    var ds = args.DrawingSession;
-
-        //    if (_melSpectrogramData == null || _melSpectrogramData.Length == 0)
-        //        return;
-
-        //    float canvasWidth = (float)sender.ActualWidth;
-        //    float canvasHeight = (float)sender.ActualHeight;
-        //    if (canvasWidth <= 0 || canvasHeight <= 0) return;
-
-        //    // Mel 频谱大小
-        //    int frameCount = _melSpectrogramData.Length;
-        //    int melBins = _melSpectrogramData[0].Length;
-
-        //    // 每个帧对应的可视宽度
-        //    float pxPerFrame = canvasWidth / frameCount;
-        //    // 每个 mel bin 对应的可视高度
-        //    float pxPerBin = canvasHeight / melBins;
-
-        //    // 找到最大最小值，以便归一化映射颜色
-        //    float minVal = float.MaxValue, maxVal = float.MinValue;
-        //    foreach (var frame in _melSpectrogramData)
-        //    {
-        //        foreach (var val in frame)
-        //        {
-        //            if (val < minVal) minVal = val;
-        //            if (val > maxVal) maxVal = val;
-        //        }
-        //    }
-
-        //    float range = Math.Max(1e-6f, maxVal - minVal);
-
-        //    // 按帧/频率循环，绘制色块
-        //    for (int f = 0; f < frameCount; f++)
-        //    {
-        //        for (int m = 0; m < melBins; m++)
-        //        {
-        //            float value = _melSpectrogramData[f][m];
-        //            // [minVal, maxVal] → [0,1]
-        //            float normalized = (value - minVal) / range;
-
-        //            // 简单从蓝色(低)到红色(高)渐变，可自由定义
-        //            byte r = (byte)(normalized * 255);
-        //            byte g = 0;
-        //            byte b = (byte)(255 - r);
-
-        //            float x = f * pxPerFrame;
-        //            float y = (melBins - 1 - m) * pxPerBin;
-        //            ds.FillRectangle(x, y, pxPerFrame, pxPerBin, Color.FromArgb(255, r, g, b));
-        //        }
-        //    }
-        //}
-
-        //#endregion
-
     }
 }

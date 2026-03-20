@@ -12,7 +12,7 @@ using System.IO;
 
 namespace DAW.Wave.Services.Implementations;
 
-public class WaveService : IWaveService // 确保实现了正确的接口
+public class WaveService : IWaveService
 {
     private readonly IAudioDevice _audioDevice;
     private readonly AudioEffectFactory _audioEffectFactory;
@@ -21,10 +21,38 @@ public class WaveService : IWaveService // 确保实现了正确的接口
     private readonly ConcurrentDictionary<AudioFile, RealtimeEffectSampleProvider> _realtimeProviders = new();
     private readonly ConcurrentDictionary<AudioFile, MemorySampleProvider> _memorySourceProviders = new();
 
+    /// <summary>
+    /// 缓存文件夹路径：集中管理，避免硬编码散落各处
+    /// </summary>
+    private static readonly string CacheFolder =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "DAW", "Cache");
+
     public WaveService(IAudioDevice audioDevice, AudioEffectFactory audioEffectFactory)
     {
         _audioDevice = audioDevice;
         _audioEffectFactory = audioEffectFactory;
+
+        // 启动时即校验 / 创建缓存目录
+        EnsureCacheFolderExists();
+    }
+
+    /// <summary>
+    /// 确保缓存目录存在且可写；若创建失败则记录日志（不抛出异常，后续 IO 操作自行处理）
+    /// </summary>
+    private static void EnsureCacheFolderExists()
+    {
+        try
+        {
+            if (!Directory.Exists(CacheFolder))
+            {
+                Directory.CreateDirectory(CacheFolder);
+                System.Diagnostics.Debug.WriteLine($"Created cache folder: {CacheFolder}");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Warning: Failed to create cache folder '{CacheFolder}': {ex.Message}");
+        }
     }
 
     // 1. OpenAsync - 返回 Task<AudioFile> (非 Task<(AudioFile?, string?)>)
@@ -212,13 +240,18 @@ public class WaveService : IWaveService // 确保实现了正确的接口
         if (audioFile == null) return;
         CleanUpPlayerComponents(audioFile, false);
         System.Diagnostics.Debug.WriteLine($"Closed and cleaned up player for {audioFile.FileName}.");
-        // 可选：删除 audioFile.FilePath 指向的缓存文件
-        if (!string.IsNullOrEmpty(audioFile.FilePath) && File.Exists(audioFile.FilePath) && audioFile.FilePath.Contains(Path.Combine("DAW", "Cache")))
+        // 仅删除位于缓存目录下的文件，使用规范化路径进行精确判断
+        if (!string.IsNullOrEmpty(audioFile.FilePath) && File.Exists(audioFile.FilePath))
         {
             try
             {
-                File.Delete(audioFile.FilePath);
-                System.Diagnostics.Debug.WriteLine($"Deleted cache file: {audioFile.FilePath}");
+                var fullPath = Path.GetFullPath(audioFile.FilePath);
+                var fullCacheFolder = Path.GetFullPath(CacheFolder);
+                if (fullPath.StartsWith(fullCacheFolder, StringComparison.OrdinalIgnoreCase))
+                {
+                    File.Delete(audioFile.FilePath);
+                    System.Diagnostics.Debug.WriteLine($"Deleted cache file: {audioFile.FilePath}");
+                }
             }
             catch (IOException ex) { System.Diagnostics.Debug.WriteLine($"Error deleting cache file {audioFile.FilePath}: {ex.Message}"); }
         }
@@ -401,10 +434,11 @@ public class WaveService : IWaveService // 确保实现了正确的接口
     {
         return await Task.Run(() =>
         {
+            // 确保缓存目录存在（防御性检查）
+            EnsureCacheFolderExists();
+
             var tempFileName = $"{Path.GetFileNameWithoutExtension(sourcePath)}_{Guid.NewGuid():N}.wav";
-            var cacheFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "DAW", "Cache");
-            Directory.CreateDirectory(cacheFolder);
-            var cachedPath = Path.Combine(cacheFolder, tempFileName);
+            var cachedPath = Path.Combine(CacheFolder, tempFileName);
 
             using (var reader = new MediaFoundationReader(sourcePath))
             {

@@ -17,7 +17,6 @@
         
         <xaml:CanvasControl Grid.Row="0"
                             x:Name="PreviewCanvasControl"
-                            ClearColor="{StaticResource CanvasClearColor}"
                             Draw="PreviewCanvasControl_Draw"
                             PointerPressed="OnPreviewCanvasPointerPressed"
                             PointerMoved="OnPreviewCanvasPointerMoved"
@@ -25,7 +24,6 @@
 
         <xaml:CanvasControl Grid.Row="1"
                             x:Name="EditorCanvasControl"
-                            ClearColor="{StaticResource CanvasClearColor}"
                             Draw="EditorCanvasControl_Draw"
                             PointerPressed="OnEditorCanvasPointerPressed"
                             PointerMoved="OnEditorCanvasPointerMoved"
