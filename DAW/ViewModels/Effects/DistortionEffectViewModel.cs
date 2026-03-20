@@ -34,6 +34,7 @@ public class DistortionEffectViewModel : ObservableRecipient
     }
     public DistortionEffectViewModel(IAudioEffect audioEffect)
     {
-        _effect = audioEffect as DistortionEffect;
+        _effect = audioEffect as DistortionEffect
+            ?? throw new ArgumentException($"Expected {nameof(DistortionEffect)}, got {audioEffect?.GetType().Name}", nameof(audioEffect));
     }
 }

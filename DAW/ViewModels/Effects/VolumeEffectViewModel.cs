@@ -25,6 +25,7 @@ public class VolumeEffectViewModel : ObservableRecipient
 
     public VolumeEffectViewModel(IAudioEffect audioEffect)
     {
-        _volumeEffect = audioEffect as VolumeEffect;
+        _volumeEffect = audioEffect as VolumeEffect
+            ?? throw new ArgumentException($"Expected {nameof(VolumeEffect)}, got {audioEffect?.GetType().Name}", nameof(audioEffect));
     }
 }

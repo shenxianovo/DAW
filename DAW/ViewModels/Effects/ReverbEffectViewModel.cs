@@ -41,6 +41,7 @@ public class ReverbEffectViewModel : ObservableObject
 
     public ReverbEffectViewModel(IAudioEffect effect)
     {
-        _effect = effect as ReverbEffect;
+        _effect = effect as ReverbEffect
+            ?? throw new ArgumentException($"Expected {nameof(ReverbEffect)}, got {effect?.GetType().Name}", nameof(effect));
     }
 }

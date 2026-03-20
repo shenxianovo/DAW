@@ -18,7 +18,8 @@ public class GraphicEQEffectViewModel : ObservableRecipient
 
     public GraphicEQEffectViewModel(IAudioEffect effect)
     {
-        _effect = effect as GraphicEQEffect;
+        _effect = effect as GraphicEQEffect
+            ?? throw new ArgumentException($"Expected {nameof(GraphicEQEffect)}, got {effect?.GetType().Name}", nameof(effect));
 
         string[] labels = ["31Hz", "62Hz", "125Hz", "250Hz", "500Hz", "1kHz", "2kHz", "4kHz", "8kHz", "16kHz"];
 
