@@ -31,6 +31,11 @@ namespace DAW.Views
     {
         public WaveViewModel ViewModel { get; set; } = App.GetService<WaveViewModel>();
 
+        /// <summary>
+        /// 追踪已打开的效果器窗口，防止同一效果器多开
+        /// </summary>
+        private readonly Dictionary<IAudioEffect, EffectWindow> _openEffectWindows = new();
+
         public WavePage()
         {
             this.InitializeComponent();
@@ -40,7 +45,26 @@ namespace DAW.Views
         {
             if (sender is FrameworkElement fe && fe.DataContext is IAudioEffect effect)
             {
+                // 如果该效果器窗口已打开，激活已有窗口
+                if (_openEffectWindows.TryGetValue(effect, out var existingWindow))
+                {
+                    try
+                    {
+                        existingWindow.Activate();
+                        return;
+                    }
+                    catch
+                    {
+                        // 窗口已关闭或无效，移除引用
+                        _openEffectWindows.Remove(effect);
+                    }
+                }
+
                 var window = new EffectWindow(effect);
+                _openEffectWindows[effect] = window;
+
+                // 窗口关闭时自动移除引用
+                window.Closed += (s, args) => _openEffectWindows.Remove(effect);
             }
         }
 
