@@ -18,9 +18,7 @@ public class VolumeEffect : IAudioEffect
     {
         for (int i = 0; i < count; i++)
         {
-            var sample = buffer[offset + i] * Volume;
-            if (sample > 1.0f) buffer[offset + i] = 1;
-            else buffer[offset + i] = sample;
+            buffer[offset + i] = Math.Clamp(buffer[offset + i] * Volume, -1.0f, 1.0f);
         }
     }
 }

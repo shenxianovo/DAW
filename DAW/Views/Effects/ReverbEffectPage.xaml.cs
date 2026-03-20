@@ -29,10 +29,10 @@ namespace DAW.Views.Effects
 
         public ReverbEffectPage(ReverbEffectViewModel vm)
         {
+            ViewModel = vm;
             this.InitializeComponent();
             this.SetDesiredHeight(300);
             this.SetDesiredWidth(400);
-            ViewModel = vm;
         }
     }
 }

@@ -28,8 +28,8 @@ namespace DAW.Views.Effects
         public DistortionEffectViewModel ViewModel { get; set; }
         public DistortionEffectPage(DistortionEffectViewModel vm)
         {
-            this.InitializeComponent();
             ViewModel = vm;
+            this.InitializeComponent();
             this.SetDesiredHeight(250);
             this.SetDesiredWidth(370);
         }

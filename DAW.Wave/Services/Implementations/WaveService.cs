@@ -339,14 +339,20 @@ public class WaveService : IWaveService, IDisposable
     public void AddEffect(AudioFile audioFile, string effectName)
     {
         if (audioFile == null) return;
-        var effect = _audioEffectFactory.CreateEffect(effectName, audioFile.SampleRate);
-        if (effect == null) return;
+
+        IAudioEffect effect;
+        try
+        {
+            effect = _audioEffectFactory.CreateEffect(effectName, audioFile.SampleRate);
+        }
+        catch (NotSupportedException ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"AddEffect: {ex.Message}");
+            return;
+        }
 
         if (audioFile.AudioEffects == null) audioFile.AudioEffects = new ObservableCollection<IAudioEffect>();
-        if (!audioFile.AudioEffects.Any(e => e.Name.Equals(effectName, StringComparison.OrdinalIgnoreCase))) // 避免重复添加
-        {
-            audioFile.AudioEffects.Add(effect);
-        }
+        audioFile.AudioEffects.Add(effect);
 
         if (_realtimeProviders.TryGetValue(audioFile, out var rp))
         {
@@ -355,13 +361,11 @@ public class WaveService : IWaveService, IDisposable
     }
 
     // 10. RemoveEffect
-    public void RemoveEffect(AudioFile audioFile, string effectName)
+    public void RemoveEffect(AudioFile audioFile, IAudioEffect effect)
     {
-        if (audioFile == null || audioFile.AudioEffects == null) return;
-        var effectToRemove = audioFile.AudioEffects.FirstOrDefault(e => e.Name.Equals(effectName, StringComparison.OrdinalIgnoreCase));
-        if (effectToRemove == null) return;
+        if (audioFile == null || audioFile.AudioEffects == null || effect == null) return;
 
-        audioFile.AudioEffects.Remove(effectToRemove);
+        audioFile.AudioEffects.Remove(effect);
 
         if (_realtimeProviders.TryGetValue(audioFile, out var rp))
         {

@@ -15,7 +15,6 @@ using Windows.Foundation.Collections;
 using DAW.ViewModels;
 using DAW.ViewModels.Effects;
 using DAW.Views.Effects;
-using System.Drawing.Imaging.Effects;
 using DAW.Utils;
 using DAW.Wave.Services;
 
@@ -29,7 +28,7 @@ namespace DAW.Views
     /// </summary>
     public sealed partial class WavePage : Page
     {
-        public WaveViewModel ViewModel { get; set; } = App.GetService<WaveViewModel>();
+        public WaveViewModel ViewModel { get; } = App.GetService<WaveViewModel>();
 
         /// <summary>
         /// 追踪已打开的效果器窗口，防止同一效果器多开
@@ -72,7 +71,7 @@ namespace DAW.Views
         {
             if (sender is FrameworkElement fe && fe.DataContext is IAudioEffect effect)
             {
-                ViewModel.RevomeEffect(effect);
+                ViewModel.RemoveEffect(effect);
             }
         }
 

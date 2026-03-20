@@ -173,9 +173,9 @@ public partial class WaveViewModel : ObservableRecipient
         _waveService.AddEffect(CurrentAudioFile, effectName);
     }
 
-    public void RevomeEffect(IAudioEffect effect)
+    public void RemoveEffect(IAudioEffect effect)
     {
-        _waveService.RemoveEffect(CurrentAudioFile, effect.Name);
+        _waveService.RemoveEffect(CurrentAudioFile, effect);
     }
 
     [RelayCommand]

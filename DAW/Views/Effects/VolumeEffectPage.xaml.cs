@@ -28,8 +28,8 @@ namespace DAW.Views.Effects
         public VolumeEffectViewModel ViewModel { get; set; }
         public VolumeEffectPage(VolumeEffectViewModel vm)
         {
-            this.InitializeComponent();
             ViewModel = vm;
+            this.InitializeComponent();
             this.SetDesiredHeight(200);
             this.SetDesiredWidth(300);
         }

@@ -16,7 +16,7 @@ public class AudioEffectFactory
             "Distortion" => new DistortionEffect(),
             "GraphicEQ" => new GraphicEQEffect(sampleRate),
             "Reverb" => new ReverbEffect(sampleRate),
-            _ => null
+            _ => throw new NotSupportedException($"Unknown effect: {name}")
         };
     }
 }

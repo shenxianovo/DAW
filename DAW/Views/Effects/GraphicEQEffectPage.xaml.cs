@@ -28,10 +28,10 @@ namespace DAW.Views.Effects
         public GraphicEQEffectViewModel ViewModel { get; set; }
         public GraphicEQEffectPage(GraphicEQEffectViewModel vm)
         {
+            ViewModel = vm;
             this.InitializeComponent();
             this.SetDesiredHeight(500);
             this.SetDesiredWidth(1100);
-            ViewModel = vm;
         }
     }
 }
