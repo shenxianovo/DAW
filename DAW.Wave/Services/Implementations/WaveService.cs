@@ -263,6 +263,31 @@ public class WaveService : IWaveService
         if (audioFile == null) return;
         EnsurePlayerComponentsExist(audioFile);
 
+        // 清除终止帧限制
+        if (_memorySourceProviders.TryGetValue(audioFile, out var msp))
+            msp.ClearEndFrame();
+
+        if (_playerMap.TryGetValue(audioFile, out var waveOut))
+        {
+            if (waveOut.PlaybackState == PlaybackState.Paused || waveOut.PlaybackState == PlaybackState.Stopped)
+            {
+                waveOut.Play();
+            }
+        }
+    }
+
+    // 5b. PlayRange - 播放指定帧范围
+    public void PlayRange(AudioFile audioFile, long startFrame, long endFrame)
+    {
+        if (audioFile == null) return;
+        EnsurePlayerComponentsExist(audioFile);
+
+        if (_memorySourceProviders.TryGetValue(audioFile, out var msp))
+        {
+            msp.SetPositionByFrame(startFrame);
+            msp.SetEndFrame(endFrame);
+        }
+
         if (_playerMap.TryGetValue(audioFile, out var waveOut))
         {
             if (waveOut.PlaybackState == PlaybackState.Paused || waveOut.PlaybackState == PlaybackState.Stopped)

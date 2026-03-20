@@ -26,7 +26,6 @@ public partial class WaveViewModel : ObservableRecipient
 
     #region Private Fields
 
-    private bool _isPlaying = false;
     // 定时器，用于刷新播放进度
     private readonly DispatcherTimer _timer;
 
@@ -34,6 +33,9 @@ public partial class WaveViewModel : ObservableRecipient
 
     #region Observable Properties
     public ObservableCollection<AudioFile> AudioList { get; } = [];
+
+    [ObservableProperty]
+    public partial bool IsPlaying { get; set; } = false;
 
     public AudioFile CurrentAudioFile
     {
@@ -116,7 +118,7 @@ public partial class WaveViewModel : ObservableRecipient
     [RelayCommand]
     private void TogglePlayPause()
     {
-        if (_isPlaying)
+        if (IsPlaying)
         {
             Pause();
         }
@@ -129,8 +131,17 @@ public partial class WaveViewModel : ObservableRecipient
     [RelayCommand]
     private void Play()
     {
-        _waveService.Play(CurrentAudioFile);
-        _isPlaying = true;
+        var af = CurrentAudioFile;
+        if (af.SelectedRightFrameIndex > af.SelectedLeftFrameIndex)
+        {
+            // 有框选区域：仅播放框选范围
+            _waveService.PlayRange(af, af.SelectedLeftFrameIndex, af.SelectedRightFrameIndex);
+        }
+        else
+        {
+            _waveService.Play(af);
+        }
+        IsPlaying = true;
         _timer.Start();
     }
 
@@ -138,7 +149,7 @@ public partial class WaveViewModel : ObservableRecipient
     private void Pause()
     {
         _waveService.Pause(CurrentAudioFile);
-        _isPlaying = false;
+        IsPlaying = false;
         _timer.Stop();
     }
 
@@ -147,7 +158,7 @@ public partial class WaveViewModel : ObservableRecipient
     {
         _waveService.Close(CurrentAudioFile);
         AudioList.Remove(CurrentAudioFile);
-        _isPlaying = false;
+        IsPlaying = false;
         _timer.Stop();
     }
 
@@ -197,11 +208,23 @@ public partial class WaveViewModel : ObservableRecipient
 
     private void UpdatePlaybackPosition()
     {
-        if (!_isPlaying || SelectedAudioIndex < 0 || SelectedAudioIndex >= AudioList.Count)
+        if (!IsPlaying || SelectedAudioIndex < 0 || SelectedAudioIndex >= AudioList.Count)
             return;
 
         long index = _waveService.GetPlaybackPositionFrame(CurrentAudioFile);
         CurrentAudioFile.PlaybackPositionFrameIndex = index;
+
+        // 检查是否到达有效播放范围末尾 → 自动暂停
+        var af = CurrentAudioFile;
+        long totalFrames = af.AudioData != null && af.Channels > 0 ? af.AudioData.Length / af.Channels : 0;
+        bool atEnd = index >= totalFrames - 1;
+        if (!atEnd && af.SelectedRightFrameIndex > af.SelectedLeftFrameIndex)
+            atEnd = index >= af.SelectedRightFrameIndex;
+
+        if (atEnd)
+        {
+            Pause();
+        }
     }
 
     #endregion

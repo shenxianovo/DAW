@@ -15,6 +15,7 @@ public interface IWaveService
     public Task<float[]> LoadWaveAsync(string filePath);
     public void Close(AudioFile audioFile);
     public void Play(AudioFile audioFile);
+    public void PlayRange(AudioFile audioFile, long startFrame, long endFrame);
     public void Pause(AudioFile audioFile);
 
     public long GetPlaybackPositionFrame(AudioFile audioFile);

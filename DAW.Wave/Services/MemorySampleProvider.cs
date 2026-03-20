@@ -11,6 +11,7 @@ namespace DAW.Wave.Services
     {
         private float[] _sourceData; // 数据源
         private long _position;      // 当前样本位置 (非帧位置)
+        private long _endSamplePosition = -1; // 播放终止位置（样本级）, -1 表示不限
         public WaveFormat WaveFormat { get; }
 
         public MemorySampleProvider(float[] sourceData, WaveFormat waveFormat)
@@ -19,6 +20,23 @@ namespace DAW.Wave.Services
             WaveFormat = waveFormat ?? throw new ArgumentNullException(nameof(waveFormat));
             _position = 0;
         }
+
+        /// <summary>
+        /// 设置播放终止帧。到达此帧后 Read 返回 0（模拟 EOF）。
+        /// 传 -1 取消限制。
+        /// </summary>
+        public void SetEndFrame(long endFrame)
+        {
+            if (endFrame < 0)
+                _endSamplePosition = -1;
+            else
+                _endSamplePosition = endFrame * WaveFormat.Channels;
+        }
+
+        /// <summary>
+        /// 清除播放终止帧限制。
+        /// </summary>
+        public void ClearEndFrame() => _endSamplePosition = -1;
 
         public int Read(float[] buffer, int offset, int count)
         {
@@ -42,11 +60,18 @@ namespace DAW.Wave.Services
 
             if (_position >= _sourceData.Length)
             {
-                // System.Diagnostics.Debug.WriteLine($"MemorySampleProvider.Read: _position {_position} >= _sourceData.Length {_sourceData.Length}. Returning 0.");
                 return 0; // 没有更多数据
             }
 
-            long samplesAvailable = _sourceData.Length - _position;
+            // 如果设置了终止位置，限制可读范围
+            long effectiveEnd = _sourceData.Length;
+            if (_endSamplePosition >= 0 && _endSamplePosition < effectiveEnd)
+                effectiveEnd = _endSamplePosition;
+
+            if (_position >= effectiveEnd)
+                return 0;
+
+            long samplesAvailable = effectiveEnd - _position;
             long samplesToCopy = Math.Min(samplesAvailable, count);
 
             if (samplesToCopy <= 0)

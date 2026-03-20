@@ -147,6 +147,7 @@
                                       SelectedLeftSample="{x:Bind ViewModel.CurrentAudioFile.SelectedLeftFrameIndex, Mode=TwoWay}"
                                       SelectedRightSample="{x:Bind ViewModel.CurrentAudioFile.SelectedRightFrameIndex, Mode=TwoWay}"
                                       PlaybackPositionSample="{x:Bind ViewModel.CurrentAudioFile.PlaybackPositionFrameIndex, Mode=TwoWay}"
+                                      IsPlaying="{x:Bind ViewModel.IsPlaying, Mode=OneWay}"
                                       HorizontalAlignment="Stretch"/>
 
 
