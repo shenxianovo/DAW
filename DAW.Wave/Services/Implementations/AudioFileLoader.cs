@@ -1,5 +1,6 @@
 using NAudio.Wave;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -25,8 +26,23 @@ internal class AudioFileLoader
         EnsureCacheFolderExists();
     }
 
+    /// <summary>
+    /// 支持的音频文件扩展名（小写，含点号）。
+    /// </summary>
+    private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".wav", ".mp3", ".flac", ".aac", ".wma", ".ogg", ".m4a", ".aiff", ".aif"
+    };
+
     public async Task<AudioFile> OpenAsync(string filePath)
     {
+        var ext = Path.GetExtension(filePath);
+        if (string.IsNullOrEmpty(ext) || !SupportedExtensions.Contains(ext))
+        {
+            throw new NotSupportedException(
+                $"不支持的文件格式 \"{ext}\"。支持的格式：{string.Join(", ", SupportedExtensions)}");
+        }
+
         try
         {
             var cachedPath = await ConvertToPcm32Async(filePath);
@@ -81,6 +97,13 @@ internal class AudioFileLoader
 
     public async Task<float[]> LoadWaveAsync(string filePath)
     {
+        var ext = Path.GetExtension(filePath);
+        if (string.IsNullOrEmpty(ext) || !SupportedExtensions.Contains(ext))
+        {
+            throw new NotSupportedException(
+                $"不支持的文件格式 \"{ext}\"。支持的格式：{string.Join(", ", SupportedExtensions)}");
+        }
+
         try
         {
             var cachedPath = await ConvertToPcm32Async(filePath);

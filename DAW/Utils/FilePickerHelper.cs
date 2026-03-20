@@ -13,7 +13,15 @@ internal static class FilePickerHelper
     public static async Task<StorageFile> ShowOpenPickerAsync()
     {
         var picker = new Windows.Storage.Pickers.FileOpenPicker();
-        picker.FileTypeFilter.Add("*");
+        picker.FileTypeFilter.Add(".wav");
+        picker.FileTypeFilter.Add(".mp3");
+        picker.FileTypeFilter.Add(".flac");
+        picker.FileTypeFilter.Add(".aac");
+        picker.FileTypeFilter.Add(".wma");
+        picker.FileTypeFilter.Add(".ogg");
+        picker.FileTypeFilter.Add(".m4a");
+        picker.FileTypeFilter.Add(".aiff");
+        picker.FileTypeFilter.Add(".aif");
         picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.MusicLibrary;
 
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
